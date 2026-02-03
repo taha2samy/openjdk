@@ -3,6 +3,8 @@ name: Build Java Images
 on:
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: taha2samy/java
 
 jobs:
   build:
@@ -58,20 +60,20 @@ jobs:
         - name: Attest JDK Image
           uses: actions/attest-build-provenance@v1
           with:
-            subject-name: docker.io/taha2samy/java
+            subject-name: index.docker.io/taha2samy/java
             subject-digest: ${{ steps.digests.outputs.JDK_DIGEST }}
             push-to-registry: true
 
         - name: Attest JRE Standard Image
           uses: actions/attest-build-provenance@v1
           with:
-            subject-name: docker.io/taha2samy/java
+            subject-name: index.docker.io/taha2samy/java
             subject-digest: ${{ steps.digests.outputs.JRE_DIGEST }}
             push-to-registry: true
 
         - name: Attest JRE Distroless Image
           uses: actions/attest-build-provenance@v1
           with:
-            subject-name: docker.io/taha2samy/java
+            subject-name: index.docker.io/taha2samy/java
             subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
             push-to-registry: true
