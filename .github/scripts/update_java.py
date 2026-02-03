@@ -8,8 +8,57 @@ ARCHITECTURES = {
     "amd64": "x64",
     "arm64": "aarch64"
 }
-DB_FILE = "versions.json"
 ADOPTIUM_API_BASE = "https://api.adoptium.net/v3/assets/latest"
+
+WOLFI_IMAGES = {
+    "base": "cgr.dev/chainguard/wolfi-base",
+    "static": "cgr.dev/chainguard/static"
+}
+
+DB_FILE = "versions.json"
+
+def get_docker_token(registry, repository):
+    auth_url = f"https://{registry}/token?service={registry}&scope=repository:{repository}:pull"
+    try:
+        r = requests.get(auth_url, timeout=10)
+        if r.status_code == 200:
+            return r.json().get("token")
+    except:
+        pass
+    return None
+
+def fetch_image_digest(full_image_name, tag="latest"):
+    try:
+        parts = full_image_name.split('/', 1)
+        if len(parts) == 2:
+            registry, repository = parts
+        else:
+            registry = "registry-1.docker.io"
+            repository = parts[0]
+            if '/' not in repository:
+                repository = f"library/{repository}"
+
+        manifest_url = f"https://{registry}/v2/{repository}/manifests/{tag}"
+        
+        headers = {
+            "Accept": "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json"
+        }
+
+        response = requests.head(manifest_url, headers=headers, timeout=10)
+
+        if response.status_code == 401:
+            token = get_docker_token(registry, repository)
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+                response = requests.head(manifest_url, headers=headers, timeout=10)
+
+        response.raise_for_status()
+        
+        digest = response.headers.get("Docker-Content-Digest")
+        return digest
+
+    except Exception:
+        return None
 
 def fetch_java_metadata(major_version, arch):
     url = f"{ADOPTIUM_API_BASE}/{major_version}/hotspot"
@@ -79,6 +128,26 @@ def main():
                 old_sha = current_data.get(ver_key, {}).get(arch_id, {}).get("sha")
                 if result["sha"] != old_sha:
                     has_changes = True
+
+    new_data["wolfi"] = {}
+    for wolfi_type, image_name in WOLFI_IMAGES.items():
+        digest = fetch_image_digest(image_name, "latest")
+        
+        if digest:
+            wolfi_entry = {
+                "image": image_name,
+                "tag": "latest",
+                "digest": digest,
+                "updated_at_check": os.getenv("GITHUB_RUN_ID", "local-run")
+            }
+            new_data["wolfi"][wolfi_type] = wolfi_entry
+
+            old_digest = current_data.get("wolfi", {}).get(wolfi_type, {}).get("digest")
+            if digest != old_digest:
+                has_changes = True
+        else:
+            if "wolfi" in current_data and wolfi_type in current_data["wolfi"]:
+                new_data["wolfi"][wolfi_type] = current_data["wolfi"][wolfi_type]
 
     if has_changes:
         with open(DB_FILE, "w") as f:
