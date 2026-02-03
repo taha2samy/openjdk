@@ -65,7 +65,7 @@ jobs:
           echo "updated_at=$(jq -r ".java${{ matrix.java_version }}.jdk.amd64.updated_at" versions.json)" >> $GITHUB_OUTPUT
 
       - name: Docker Bake (Build and Push)
-        uses: docker/bake-action@v4
+        uses: docker/bake-action@v5
         with:
           files: |
             docker-bake.hcl
