@@ -80,7 +80,7 @@ jobs:
             push-to-registry: true
   cleanup:
     runs-on: ubuntu-latest
-    depends-on: build
+    needs: build
     steps:
         - name: Checkout Code
           uses: actions/checkout@v4
