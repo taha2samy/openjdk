@@ -1,0 +1,7 @@
+version: "3"
+
+tasks:
+  update-java:
+    cmds:
+      - python .github/scripts/update_java.py
+    silent: true
