@@ -25,3 +25,7 @@ target "_common" {
 group "java17" {
   targets = ["java17-jre-std", "java17-jdk-std", "java17-jre-distroless"]
 }
+
+group "all" {
+  targets = ["java17"]
+}

@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1
 ARG WOLFI_BASE_DIGEST
 ARG WOLFI_STATIC_DIGEST
 

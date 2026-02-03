@@ -15,7 +15,7 @@ variable "JAVA17_UPSTREAM_UPDATE" {}
 target "java17-jre-std" {
     inherits = ["_common"]
     context = "./versions/17"
-    target = "jre-std"
+    target = "jre-standard"
     args = {
         BUILD_TYPE = "jre"
         JAVA_VER = "17"
@@ -35,7 +35,7 @@ target "java17-jre-std" {
 target "java17-jdk-std" {
     inherits = ["_common"]
     context = "./versions/17"
-    target = "jdk-std"
+    target = "jdk-standard"
     args = {
         BUILD_TYPE = "jdk"
         JAVA_VER = "17"
