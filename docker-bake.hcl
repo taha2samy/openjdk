@@ -8,7 +8,7 @@ variable "REPO" {
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
   cache-from = ["type=registry,ref=${REGISTRY}/${REPO}:${CACHE_TAG}"]
-  cache-to   = ["type=registry,ref=${REGISTRY}/${REPO}:${CACHE_TAG},mode=max"]
+  cache-to   = ["type=registry,ref=${REGISTRY}/${REPO}:${CACHE_TAG},mode=min"]
   attest = [
     "type=provenance,mode=max",
     "type=sbom"
