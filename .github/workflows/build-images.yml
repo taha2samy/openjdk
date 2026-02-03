@@ -78,11 +78,16 @@ jobs:
             subject-name: ${{ env.IMAGE_NAME }}
             subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
             push-to-registry: true
+  cleanup:
+    runs-on: ubuntu-latest
+    depends-on: build
+    steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
         - name: Cleanup Old Docker Images
           if: always() 
           run: |
-            pip install requests
-            python scripts/cleanup_hub.py 
+            python .github/scripts/cleanup_hub.py 
           env:
             DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
             DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -90,4 +95,4 @@ jobs:
             DOCKERHUB_ORG: taha2samy
             DOCKERHUB_REPO: java
             
-            KEEP_LAST: 10
+            KEEP_LAST: 1
