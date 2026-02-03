@@ -93,16 +93,35 @@ jobs:
           set: |
             *.args.GHCR_REGISTRY=ghcr.io/${{ github.repository_owner }}
 
-      - name: Attest Images
+      - name: Extract Digests
+        id: digests
         if: github.event.inputs.publish == 'true'
         run: |
           METADATA='${{ steps.bake.outputs.metadata }}'
-          for TARGET in "jdk-std" "jre-std" "jre-distroless"; do
-            DIGEST=$(echo "$METADATA" | jq -r ".\"java${{ matrix.java_version }}-$TARGET\"[\"containerimage.digest\"]")
-            if [ "$DIGEST" != "null" ] && [ "$DIGEST" != "" ]; then
-              gh attestation create --repo ${{ github.repository }} --subject-name ${{ env.DOCKER_IMAGE }} --subject-digest $DIGEST
-              gh attestation create --repo ${{ github.repository }} --subject-name ${{ env.GHCR_IMAGE }} --subject-digest $DIGEST
-            fi
-          done
-        env:
-          GH_TOKEN: ${{ github.token }}
+          echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+
+      - name: Attest JDK
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      - name: Attest JRE
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      - name: Attest Distroless
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
