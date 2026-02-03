@@ -2,12 +2,10 @@ variable "JAVA17_JRE_AMD64_URL" {}
 variable "JAVA17_JRE_AMD64_SHA" {}
 variable "JAVA17_JRE_ARM64_URL" {}
 variable "JAVA17_JRE_ARM64_SHA" {}
-
 variable "JAVA17_JDK_AMD64_URL" {}
 variable "JAVA17_JDK_AMD64_SHA" {}
 variable "JAVA17_JDK_ARM64_URL" {}
 variable "JAVA17_JDK_ARM64_SHA" {}
-
 variable "JAVA17_FULL_VER" {}
 variable "JAVA17_SEC_LEVEL" {}
 variable "JAVA17_SEMVER" {}
