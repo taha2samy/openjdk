@@ -95,4 +95,4 @@ jobs:
             DOCKERHUB_ORG: taha2samy
             DOCKERHUB_REPO: java
             
-            KEEP_LAST: 1
+            KEEP_LAST: 20
