@@ -78,10 +78,16 @@ jobs:
             subject-name: ${{ env.IMAGE_NAME }}
             subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
             push-to-registry: true
-        - name: Remove dangling images from Docker Hub
-          uses: nrukavkov/delete-docker-hub-tag@v1
-          with:
-            delete_untagged: "true"
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
-            repository: ${{ env.IMAGE_NAME }}
+        - name: Cleanup Old Docker Images
+          if: always() 
+          run: |
+            pip install requests
+            python scripts/cleanup_hub.py 
+          env:
+            DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+            
+            DOCKERHUB_ORG: taha2samy
+            DOCKERHUB_REPO: java
+            
+            KEEP_LAST: 10
