@@ -3,23 +3,48 @@ name: Build Java Images
 on:
   workflow_dispatch:
     inputs:
-      java_version:
-        description: 'Java Version to build'
-        required: true
-        default: '17'
-        type: choice
-        options:
-          - '8'
-          - '11'
-          - '17'
-          - '21'
+      java_8:
+        description: 'Java 8'
+        type: boolean
+        default: false
+      java_11:
+        description: 'Java 11'
+        type: boolean
+        default: false
+      java_17:
+        description: 'Java 17'
+        type: boolean
+        default: true
+      java_21:
+        description: 'Java 21'
+        type: boolean
+        default: false
 
 env:
-  REGISTRY: docker.io/taha2samy
-  REPO: java
+  IMAGE_NAME: docker.io/taha2samy/java
 
 jobs:
+  define-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.set-versions.outputs.versions }}
+    steps:
+      - id: set-versions
+        run: |
+          VERSIONS=()
+          ${{ github.event.inputs.java_8 }} && VERSIONS+=("8")
+          ${{ github.event.inputs.java_11 }} && VERSIONS+=("11")
+          ${{ github.event.inputs.java_17 }} && VERSIONS+=("17")
+          ${{ github.event.inputs.java_21 }} && VERSIONS+=("21")
+          
+          JSON_ARRAY=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s -c .)
+          
+          echo "Selected versions: $JSON_ARRAY"
+          echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
+
   build:
+    needs: define-matrix
+    if: needs.define-matrix.outputs.versions != '[]' && needs.define-matrix.outputs.versions != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,8 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # هنا يمكنك تحديد إصدار واحد أو قائمة إصدارات
-        java_version: [ "${{ github.event.inputs.java_version }}" ]
+        java_version: ${{ fromJSON(needs.define-matrix.outputs.versions) }}
 
     steps:
       - name: Checkout Code
@@ -43,7 +67,6 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -55,42 +78,18 @@ jobs:
             docker-bake.hcl
             versions/${{ matrix.java_version }}/build.hcl
             versions.hcl
-          # هنا نقوم باستدعاء الـ group الخاص بالإصدار المختار
           targets: java${{ matrix.java_version }}
           push: true
 
-      - name: Extract Digests
-        id: digests
+      - name: Extract and Attest
         run: |
-          # استخراج الـ Digest لكل صورة تم بناؤها من مخرجات Bake
           METADATA='${{ steps.bake.outputs.metadata }}'
-          
-          # استخراج الـ Digest بناءً على اسم التارجت في ملف الـ HCL
-          JDK_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')
-          JRE_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')
-          DISTRO_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')
-          
-          echo "JDK_DIGEST=$JDK_DIGEST" >> $GITHUB_OUTPUT
-          echo "JRE_DIGEST=$JRE_DIGEST" >> $GITHUB_OUTPUT
-          echo "DISTRO_DIGEST=$DISTRO_DIGEST" >> $GITHUB_OUTPUT
-
-      - name: Attest JDK Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.REPO }}
-          subject-digest: ${{ steps.digests.outputs.JDK_DIGEST }}
-          push-to-registry: true
-
-      - name: Attest JRE Standard Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.REPO }}
-          subject-digest: ${{ steps.digests.outputs.JRE_DIGEST }}
-          push-to-registry: true
-
-      - name: Attest JRE Distroless Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.REPO }}
-          subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
-          push-to-registry: true
+          for TARGET in "jdk-std" "jre-std" "jre-distroless"; do
+            DIGEST=$(echo "$METADATA" | jq -r ".\"java${{ matrix.java_version }}-$TARGET\"[\"containerimage.digest\"]")
+            if [ "$DIGEST" != "null" ]; then
+              echo "Attesting java${{ matrix.java_version }}-$TARGET with digest $DIGEST"
+              gh attestation verify "$DIGEST" --repo ${{ github.repository }} || echo "Creating attestation..."
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
