@@ -1,7 +1,6 @@
 import requests
 import json
 import os
-from datetime import datetime
 
 JAVA_VERSIONS = [8, 11, 17, 21, 25]
 IMAGE_TYPES = ["jdk", "jre"]
@@ -51,7 +50,7 @@ def fetch_image_digest(full_image_name, tag="latest"):
 
         response.raise_for_status()
         return response.headers.get("Docker-Content-Digest")
-    except Exception:
+    except:
         return None
 
 def fetch_java_metadata(major_version, arch, image_type):
@@ -90,10 +89,10 @@ def fetch_java_metadata(major_version, arch, image_type):
             "release_name": item.get('release_name'),
             "vendor": item.get('vendor'),
             "image_type": image_type,
-            "workflow_run_id": os.getenv("GITHUB_RUN_ID", "local-manual-run"),
-            "workflow_name": os.getenv("GITHUB_WORKFLOW", "manual-execution"),
+            "workflow_run_id": os.getenv("GITHUB_RUN_ID", "none"),
+            "workflow_name": os.getenv("GITHUB_WORKFLOW", "none")
         }
-    except Exception:
+    except:
         return None
 
 def main():
@@ -121,6 +120,9 @@ def main():
                     old_sha = current_data.get(ver_key, {}).get(img_type, {}).get(arch_id, {}).get("sha")
                     if result["sha"] != old_sha:
                         has_changes = True
+                else:
+                    if ver_key in current_data and img_type in current_data[ver_key] and arch_id in current_data[ver_key][img_type]:
+                        new_data[ver_key][img_type][arch_id] = current_data[ver_key][img_type][arch_id]
 
     new_data["wolfi"] = {}
     for wolfi_type, image_name in WOLFI_IMAGES.items():
@@ -130,7 +132,7 @@ def main():
                 "image": image_name,
                 "tag": "latest",
                 "digest": digest,
-                "workflow_run_id": os.getenv("GITHUB_RUN_ID", "local-run"),
+                "workflow_run_id": os.getenv("GITHUB_RUN_ID", "none")
             }
             new_data["wolfi"][wolfi_type] = wolfi_entry
             old_digest = current_data.get("wolfi", {}).get(wolfi_type, {}).get("digest")
