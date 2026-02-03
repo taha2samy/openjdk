@@ -72,6 +72,8 @@ COPY --from=helper /usr/lib/libm.so* /usr/lib/
 COPY --from=helper /usr/lib/libdl.so* /usr/lib/
 COPY --from=helper /lib/ld-linux-* /lib/
 COPY --from=cleaner /opt/java-slim /opt/java
+COPY --from=helper /etc/ssl/certs /etc/ssl/certs
+
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}" LANG=C.UTF-8
 USER java
 WORKDIR /home/java
