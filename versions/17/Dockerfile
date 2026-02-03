@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_17 \
     tar -xzf "/var/cache/java_download/$FILENAME" -C /opt/java-full --strip-components=1 && \
     find /opt/java-full -exec touch -t 202001010000 {} +
 
-FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS cleaner
+FROM cgr.dev/chainguard/wolfi-base:latest AS cleaner
 COPY --from=fetcher /opt/java-full /opt/java-slim
 RUN rm -rf /opt/java-slim/jmods \
     /opt/java-slim/lib/src.zip \
@@ -35,13 +35,13 @@ RUN rm -rf /opt/java-slim/jmods \
     /opt/java-slim/man \
     /opt/java-slim/docs
 
-FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS helper
+FROM cgr.dev/chainguard/wolfi-base:latest AS helper
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_helper_17 \
     apk add --no-cache libstdc++ zlib tzdata posix-libc-utils
 RUN addgroup -g 1000 java && adduser -u 1000 -G java -D -s /bin/bash java
 RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/lib/libz.so
 
-FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS jdk-standard
+FROM cgr.dev/chainguard/wolfi-base:latest AS jdk-standard
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jdk_17 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
@@ -52,7 +52,7 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
-FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS jre-standard
+FROM cgr.dev/chainguard/wolfi-base:latest AS jre-standard
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_17 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
@@ -63,7 +63,7 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
-FROM cgr.dev/chainguard/static@${WOLFI_STATIC_DIGEST} AS jre-distroless
+FROM cgr.dev/chainguard/static:latest AS jre-distroless
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=helper /usr/share/zoneinfo /usr/share/zoneinfo
