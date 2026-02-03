@@ -9,7 +9,7 @@ ARG JAVA_URL_AARCH64
 ARG JAVA_SHA_AMD64
 ARG JAVA_SHA_AARCH64
 
-RUN --mount=type=cache,target=/var/cache/java_download \
+RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_17 \
     apk add --no-cache curl tar && \
     set -ux; \
     if [ "$TARGETARCH" = "amd64" ]; then \
@@ -23,7 +23,8 @@ RUN --mount=type=cache,target=/var/cache/java_download \
     fi; \
     echo "$SHA  /var/cache/java_download/$FILENAME" | sha256sum -c - && \
     mkdir -p /opt/java-full && \
-    tar -xzf "/var/cache/java_download/$FILENAME" -C /opt/java-full --strip-components=1
+    tar -xzf "/var/cache/java_download/$FILENAME" -C /opt/java-full --strip-components=1 && \
+    find /opt/java-full -exec touch -t 202001010000 {} +
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS cleaner
 COPY --from=fetcher /opt/java-full /opt/java-slim
@@ -35,13 +36,13 @@ RUN rm -rf /opt/java-slim/jmods \
     /opt/java-slim/docs
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS helper
-RUN --mount=type=cache,target=/var/cache/apk \
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_helper_17 \
     apk add --no-cache libstdc++ zlib tzdata posix-libc-utils
 RUN addgroup -g 1000 java && adduser -u 1000 -G java -D -s /bin/bash java
 RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/lib/libz.so
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS jdk-standard
-RUN --mount=type=cache,target=/var/cache/apk \
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jdk_17 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
@@ -52,7 +53,7 @@ USER java
 WORKDIR /home/java
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS jre-standard
-RUN --mount=type=cache,target=/var/cache/apk \
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_17 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
