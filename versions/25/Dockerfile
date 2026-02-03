@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1
-ARG WOLFI_BASE_DIGEST=sha256:2bdab5abde97a1487c667d3ffcc7265fa9abdeb5b2365bca9a64a5f3afc5a563
-ARG WOLFI_STATIC_DIGEST=sha256:9cef3c6a78264cb7e25923bf1bf7f39476dccbcc993af9f4ffeb191b77a7951e
 
 FROM alpine:3.19 AS fetcher
 ARG TARGETARCH
