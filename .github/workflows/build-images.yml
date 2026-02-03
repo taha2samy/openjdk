@@ -31,11 +31,47 @@ jobs:
             password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
         - name: Docker Bake (Build and Push)
+          id: bake
           uses: docker/bake-action@v5
           with:
             files: |
               docker-bake.hcl
               versions/${{ matrix.java_version }}/build.hcl
-              versions.hcl 
+              versions.hcl
             targets: java${{ matrix.java_version }}
             push: true
+
+        - name: Extract Digests
+          id: digests
+          run: |
+            METADATA='${{ steps.bake.outputs.metadata }}'
+
+            JDK_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"."containerimage.digest"')
+            echo "JDK_DIGEST=$JDK_DIGEST" >> $GITHUB_OUTPUT
+
+            JRE_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"."containerimage.digest"')
+            echo "JRE_DIGEST=$JRE_DIGEST" >> $GITHUB_OUTPUT
+
+            DISTRO_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"."containerimage.digest"')
+            echo "DISTRO_DIGEST=$DISTRO_DIGEST" >> $GITHUB_OUTPUT
+
+        - name: Attest JDK Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name: docker.io/taha2samy/java
+            subject-digest: ${{ steps.digests.outputs.JDK_DIGEST }}
+            push-to-registry: true
+
+        - name: Attest JRE Standard Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name: docker.io/taha2samy/java
+            subject-digest: ${{ steps.digests.outputs.JRE_DIGEST }}
+            push-to-registry: true
+
+        - name: Attest JRE Distroless Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name: docker.io/taha2samy/java
+            subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
+            push-to-registry: true
