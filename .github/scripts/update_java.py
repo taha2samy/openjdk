@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from datetime import datetime
 
 JAVA_VERSIONS = [8, 11, 17, 21, 25]
 IMAGE_TYPES = ["jdk", "jre"]
