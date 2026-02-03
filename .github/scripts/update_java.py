@@ -4,17 +4,17 @@ import os
 from datetime import datetime
 
 JAVA_VERSIONS = [8, 11, 17, 21, 25]
-IMAGE_TYPES = ["jdk", "jre"]
+IMAGE_TYPES = ["JDK", "JRE"]
 ARCHITECTURES = {
-    "amd64": "x64",
-    "arm64": "aarch64"
+    "AMD64": "x64",
+    "ARM64": "aarch64"
 }
 ADOPTIUM_API_BASE = "https://api.adoptium.net/v3/assets/latest"
 WOLFI_IMAGES = {
-    "base": "cgr.dev/chainguard/wolfi-base",
-    "static": "cgr.dev/chainguard/static"
+    "BASE": "cgr.dev/chainguard/wolfi-base",
+    "STATIC": "cgr.dev/chainguard/static"
 }
-DB_FILE = "versions.json"
+HCL_FILE = "versions.hcl"
 
 def get_docker_token(registry, repository):
     auth_url = f"https://{registry}/token?service={registry}&scope=repository:{repository}:pull"
@@ -38,9 +38,7 @@ def fetch_image_digest(full_image_name, tag="latest"):
                 repository = f"library/{repository}"
 
         manifest_url = f"https://{registry}/v2/{repository}/manifests/{tag}"
-        headers = {
-            "Accept": "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json"
-        }
+        headers = {"Accept": "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json"}
         response = requests.head(manifest_url, headers=headers, timeout=10)
 
         if response.status_code == 401:
@@ -58,7 +56,7 @@ def fetch_java_metadata(major_version, arch, image_type):
     url = f"{ADOPTIUM_API_BASE}/{major_version}/hotspot"
     params = {
         "architecture": arch,
-        "image_type": image_type,
+        "image_type": image_type.lower(),
         "os": "linux",
         "vendor": "eclipse"
     }
@@ -75,77 +73,60 @@ def fetch_java_metadata(major_version, arch, image_type):
         ver = item['version']
         
         return {
-            "url": pkg['link'],
-            "sha": pkg['checksum'],
-            "checksum_link": pkg.get('checksum_link'),
-            "binary_name": pkg.get('name'),
-            "openjdk_version": ver.get('openjdk_version'),
-            "semver": ver.get('semver'),
-            "major": ver.get('major'),
-            "security_level": ver.get('security'),
-            "build_number": ver.get('build'),
-            "scm_ref": binary.get('scm_ref'),
-            "updated_at": binary.get('updated_at'),
-            "release_link": item.get('release_link'),
-            "release_name": item.get('release_name'),
-            "vendor": item.get('vendor'),
-            "image_type": image_type,
-            "workflow_run_id": os.getenv("GITHUB_RUN_ID", "none"),
-            "workflow_name": os.getenv("GITHUB_WORKFLOW", "none")
+            "URL": pkg['link'],
+            "SHA": pkg['checksum'],
+            "CHECKSUM_LINK": pkg.get('checksum_link'),
+            "BINARY_NAME": pkg.get('name'),
+            "FULL_VER": ver.get('openjdk_version'),
+            "SEMVER": ver.get('semver'),
+            "MAJOR": ver.get('major'),
+            "SEC_LEVEL": ver.get('security'),
+            "BUILD_NUMBER": ver.get('build'),
+            "SCM_REF": binary.get('scm_ref'),
+            "UPSTREAM_UPDATE": binary.get('updated_at'),
+            "RELEASE_LINK": item.get('release_link'),
+            "RELEASE_NAME": item.get('release_name'),
+            "VENDOR": item.get('vendor'),
+            "WORKFLOW_RUN_ID": os.getenv("GITHUB_RUN_ID", "none"),
+            "WORKFLOW_NAME": os.getenv("GITHUB_WORKFLOW", "none")
         }
     except:
         return None
 
 def main():
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f:
-                current_data = json.load(f)
-        except:
-            current_data = {}
-    else:
-        current_data = {}
-
-    new_data = {}
-    has_changes = False
+    hcl_lines = []
+    
+    for w_name, img_path in WOLFI_IMAGES.items():
+        digest = fetch_image_digest(img_path)
+        if digest:
+            hcl_lines.append(f'WOLFI_{w_name}_DIGEST = "{digest}"')
 
     for v in JAVA_VERSIONS:
-        ver_key = f"java{v}"
-        new_data[ver_key] = {}
-        for img_type in IMAGE_TYPES:
-            new_data[ver_key][img_type] = {}
-            for arch_id, api_arch in ARCHITECTURES.items():
-                result = fetch_java_metadata(v, api_arch, img_type)
-                if result:
-                    new_data[ver_key][img_type][arch_id] = result
-                    old_sha = current_data.get(ver_key, {}).get(img_type, {}).get(arch_id, {}).get("sha")
-                    if result["sha"] != old_sha:
-                        has_changes = True
-                else:
-                    if ver_key in current_data and img_type in current_data[ver_key] and arch_id in current_data[ver_key][img_type]:
-                        new_data[ver_key][img_type][arch_id] = current_data[ver_key][img_type][arch_id]
+        for itype in IMAGE_TYPES:
+            for arch_label, api_arch in ARCHITECTURES.items():
+                res = fetch_java_metadata(v, api_arch, itype)
+                if res:
+                    prefix = f"JAVA{v}_{itype}_{arch_label}"
+                    for key, value in res.items():
+                        hcl_lines.append(f'{prefix}_{key} = "{value}"')
+                    
+                    if itype == "JDK" and arch_label == "AMD64":
+                        hcl_lines.append(f'JAVA{v}_FULL_VER = "{res["FULL_VER"]}"')
+                        hcl_lines.append(f'JAVA{v}_SEC_LEVEL = "{res["SEC_LEVEL"]}"')
+                        hcl_lines.append(f'JAVA{v}_SEMVER = "{res["SEMVER"]}"')
+                        hcl_lines.append(f'JAVA{v}_SCM_REF = "{res["SCM_REF"]}"')
+                        hcl_lines.append(f'JAVA{v}_UPSTREAM_UPDATE = "{res["UPSTREAM_UPDATE"]}"')
 
-    new_data["wolfi"] = {}
-    for wolfi_type, image_name in WOLFI_IMAGES.items():
-        digest = fetch_image_digest(image_name, "latest")
-        if digest:
-            wolfi_entry = {
-                "image": image_name,
-                "tag": "latest",
-                "digest": digest,
-                "workflow_run_id": os.getenv("GITHUB_RUN_ID", "none")
-            }
-            new_data["wolfi"][wolfi_type] = wolfi_entry
-            old_digest = current_data.get("wolfi", {}).get(wolfi_type, {}).get("digest")
-            if digest != old_digest:
-                has_changes = True
-        else:
-            if "wolfi" in current_data and wolfi_type in current_data["wolfi"]:
-                new_data["wolfi"][wolfi_type] = current_data["wolfi"][wolfi_type]
+    new_hcl_content = "\n".join(hcl_lines)
+    
+    old_hcl_content = ""
+    if os.path.exists(HCL_FILE):
+        with open(HCL_FILE, "r") as f:
+            old_hcl_content = f.read()
 
-    if has_changes:
-        with open(DB_FILE, "w") as f:
-            json.dump(new_data, f, indent=4)
+    if new_hcl_content.strip() != old_hcl_content.strip():
+        with open(HCL_FILE, "w") as f:
+            f.write(new_hcl_content)
         print("Update_Found")
     else:
         print("No_Changes")
