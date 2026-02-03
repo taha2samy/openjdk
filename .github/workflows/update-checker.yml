@@ -38,9 +38,13 @@ jobs:
   trigger-build:
     needs: check-versions
     if: needs.check-versions.outputs.needs_update == 'true'
+    permissions:
+      actions: write
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Trigger Build Pipeline 
-        run: gh workflow run build-images.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build-images.yml
