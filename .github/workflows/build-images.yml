@@ -39,5 +39,3 @@ jobs:
               versions.hcl 
             targets: java${{ matrix.java_version }}
             push: true
-            set: |
-              *.CACHE_TAG=cache-${{ matrix.java_version }}
