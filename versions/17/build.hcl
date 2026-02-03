@@ -11,7 +11,9 @@ variable "JAVA17_SEC_LEVEL" {}
 variable "JAVA17_SEMVER" {}
 variable "JAVA17_SCM_REF" {}
 variable "JAVA17_UPSTREAM_UPDATE" {}
-
+variable "CACHE_TAG" {
+    default = "cache-17"
+}
 target "java17-jre-std" {
     inherits = ["_common"]
     context = "./versions/17"
@@ -36,6 +38,7 @@ target "java17-jdk-std" {
     inherits = ["_common"]
     context = "./versions/17"
     target = "jdk-standard"
+    
     args = {
         BUILD_TYPE = "jdk"
         JAVA_VER = "17"
