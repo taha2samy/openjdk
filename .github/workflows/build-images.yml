@@ -40,7 +40,7 @@ jobs:
           with:
             registry: docker.io
             username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
+            password: ${{ secrets.DOCKERHUB_PASSWORD }}
         - name: Extract Metadata from JSON
           id: meta
           run: |
