@@ -50,7 +50,7 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
-FROM cgr.dev/chainguard/wolfi-base :latest AS jre-standard
+FROM cgr.dev/chainguard/wolfi-base:latest AS jre-standard
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_21 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
