@@ -6,9 +6,6 @@ variable "WOLFI_BASE_DIGEST" {
   default = "latest"
 }
 
-variable "CACHE_TAG" {
-  
-}
 variable "WOLFI_STATIC_DIGEST" {
   default = "latest"
 }

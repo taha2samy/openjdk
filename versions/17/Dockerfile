@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 ARG WOLFI_BASE_DIGEST
 ARG WOLFI_STATIC_DIGEST
 
@@ -7,19 +8,22 @@ ARG JAVA_URL_AMD64
 ARG JAVA_URL_AARCH64
 ARG JAVA_SHA_AMD64
 ARG JAVA_SHA_AARCH64
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache curl tar
-RUN set -ux; \
+
+RUN --mount=type=cache,target=/var/cache/java_download \
+    apk add --no-cache curl tar && \
+    set -ux; \
     if [ "$TARGETARCH" = "amd64" ]; then \
     URL=$JAVA_URL_AMD64; SHA=$JAVA_SHA_AMD64; \
     else \
     URL=$JAVA_URL_AARCH64; SHA=$JAVA_SHA_AARCH64; \
     fi; \
-    curl -LfsS "$URL" -o java.tar.gz && \
-    echo "$SHA  java.tar.gz" | sha256sum -c - && \
+    FILENAME=$(basename "$URL"); \
+    if [ ! -f "/var/cache/java_download/$FILENAME" ]; then \
+    curl -LfsS "$URL" -o "/var/cache/java_download/$FILENAME"; \
+    fi; \
+    echo "$SHA  /var/cache/java_download/$FILENAME" | sha256sum -c - && \
     mkdir -p /opt/java-full && \
-    tar -xzf java.tar.gz -C /opt/java-full --strip-components=1 && \
-    rm java.tar.gz
+    tar -xzf "/var/cache/java_download/$FILENAME" -C /opt/java-full --strip-components=1
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS cleaner
 COPY --from=fetcher /opt/java-full /opt/java-slim
@@ -43,8 +47,7 @@ COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=helper /usr/lib/libz.so* /usr/lib/
 COPY --from=fetcher /opt/java-full /opt/java
-ENV JAVA_HOME=/opt/java
-ENV PATH="/opt/java/bin:${PATH}"
+ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
@@ -55,8 +58,7 @@ COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=helper /usr/lib/libz.so* /usr/lib/
 COPY --from=cleaner /opt/java-slim /opt/java
-ENV JAVA_HOME=/opt/java
-ENV PATH="/opt/java/bin:${PATH}"
+ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
@@ -73,9 +75,7 @@ COPY --from=helper /usr/lib/libm.so* /usr/lib/
 COPY --from=helper /usr/lib/libdl.so* /usr/lib/
 COPY --from=helper /lib/ld-linux-* /lib/
 COPY --from=cleaner /opt/java-slim /opt/java
-ENV JAVA_HOME=/opt/java
-ENV PATH="/opt/java/bin:${PATH}"
-ENV LANG=C.UTF-8
+ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}" LANG=C.UTF-8
 USER java
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]
