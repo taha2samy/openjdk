@@ -6,23 +6,29 @@ ORG = os.getenv('DOCKERHUB_ORG')
 REPO = os.getenv('DOCKERHUB_REPO')
 
 def main():
-    login_url = "https://hub.docker.com/v2/users/login/"
-    r = requests.post(login_url, json={"username": USERNAME, "password": PASSWORD})
+    r = requests.post("https://hub.docker.com/v2/users/login/", json={"username": USERNAME, "password": PASSWORD})
     if r.status_code != 200:
+        print(f"Error Login: {r.status_code} {r.text}")
         sys.exit(1)
     
     token = r.json().get("token")
     headers = {"Authorization": f"JWT {token}"}
     
-    images_url = f"https://hub.docker.com/v2/repositories/{ORG}/{REPO}/images"
-    res = requests.get(images_url, headers=headers)
-    if res.status_code != 200:
-        sys.exit(1)
-        
-    digests = [img['digest'] for img in res.json().get('results', [])]
+    digests = []
+    url = f"https://hub.docker.com/v2/repositories/{ORG}/{REPO}/images?page_size=10000"
     
+    while url:
+        res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            print(f"Error Fetch: {res.status_code} {res.text}")
+            sys.exit(1)
+        data = res.json()
+        digests.extend([img['digest'] for img in data.get('results', [])])
+        url = data.get('next')
+        
     with open("old_digests.json", "w") as f:
         json.dump(digests, f)
+    print(f"Recorded {len(digests)} digests")
 
 if __name__ == "__main__":
     main()
