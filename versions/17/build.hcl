@@ -2,12 +2,6 @@ variable "CACHE_TAG" {
     default = "cache-17"
 }
 
-variable "REGISTRY" {}
-variable "REPO" {}
-
-variable "WOLFI_BASE_DIGEST" {}
-variable "WOLFI_STATIC_DIGEST" {}
-
 variable "JAVA17_JRE_AMD64_URL" {}
 variable "JAVA17_JRE_AMD64_SHA" {}
 variable "JAVA17_JRE_ARM64_URL" {}
