@@ -70,24 +70,25 @@ jobs:
           files: |
             docker-bake.hcl
             versions/${{ matrix.java_version }}/build.hcl
-                targets: java${{ matrix.java_version }}
-                push: true
-                set: |
-                  *.JAVA${{ matrix.java_version }}_JRE_AMD64_URL=${{ steps.meta.outputs.jre_amd_url }}
-                  *.JAVA${{ matrix.java_version }}_JRE_AMD64_SHA=${{ steps.meta.outputs.jre_amd_sha }}
-                  *.JAVA${{ matrix.java_version }}_JRE_ARM64_URL=${{ steps.meta.outputs.jre_arm_url }}
-                  *.JAVA${{ matrix.java_version }}_JRE_ARM64_SHA=${{ steps.meta.outputs.jre_arm_sha }}
-                  
-                  *.JAVA${{ matrix.java_version }}_JDK_AMD64_URL=${{ steps.meta.outputs.jdk_amd_url }}
-                  *.JAVA${{ matrix.java_version }}_JDK_AMD64_SHA=${{ steps.meta.outputs.jdk_amd_sha }}
-                  *.JAVA${{ matrix.java_version }}_JDK_ARM64_URL=${{ steps.meta.outputs.jdk_arm_url }}
-                  *.JAVA${{ matrix.java_version }}_JDK_ARM64_SHA=${{ steps.meta.outputs.jdk_arm_sha }}
-                  
-                  *.JAVA${{ matrix.java_version }}_FULL_VER=${{ steps.meta.outputs.full_ver }}
-                  *.JAVA${{ matrix.java_version }}_SEC_LEVEL=${{ steps.meta.outputs.sec_lvl }}
-                  *.JAVA${{ matrix.java_version }}_SEMVER=${{ steps.meta.outputs.semver }}
-                  *.JAVA${{ matrix.java_version }}_SCM_REF=${{ steps.meta.outputs.scm_ref }}
-                  *.JAVA${{ matrix.java_version }}_UPSTREAM_UPDATE=${{ steps.meta.outputs.updated_at }}
-                  
-                  *.WOLFI_BASE_DIGEST=${{ steps.meta.outputs.wolfi_base }}
-                  *.WOLFI_STATIC_DIGEST=${{ steps.meta.outputs.wolfi_static }}
+
+          targets: java${{ matrix.java_version }}
+          push: true
+          set: |
+            *.JAVA${{ matrix.java_version }}_JRE_AMD64_URL=${{ steps.meta.outputs.jre_amd_url }}
+            *.JAVA${{ matrix.java_version }}_JRE_AMD64_SHA=${{ steps.meta.outputs.jre_amd_sha }}
+            *.JAVA${{ matrix.java_version }}_JRE_ARM64_URL=${{ steps.meta.outputs.jre_arm_url }}
+            *.JAVA${{ matrix.java_version }}_JRE_ARM64_SHA=${{ steps.meta.outputs.jre_arm_sha }}
+            
+            *.JAVA${{ matrix.java_version }}_JDK_AMD64_URL=${{ steps.meta.outputs.jdk_amd_url }}
+            *.JAVA${{ matrix.java_version }}_JDK_AMD64_SHA=${{ steps.meta.outputs.jdk_amd_sha }}
+            *.JAVA${{ matrix.java_version }}_JDK_ARM64_URL=${{ steps.meta.outputs.jdk_arm_url }}
+            *.JAVA${{ matrix.java_version }}_JDK_ARM64_SHA=${{ steps.meta.outputs.jdk_arm_sha }}
+            
+            *.JAVA${{ matrix.java_version }}_FULL_VER=${{ steps.meta.outputs.full_ver }}
+            *.JAVA${{ matrix.java_version }}_SEC_LEVEL=${{ steps.meta.outputs.sec_lvl }}
+            *.JAVA${{ matrix.java_version }}_SEMVER=${{ steps.meta.outputs.semver }}
+            *.JAVA${{ matrix.java_version }}_SCM_REF=${{ steps.meta.outputs.scm_ref }}
+            *.JAVA${{ matrix.java_version }}_UPSTREAM_UPDATE=${{ steps.meta.outputs.updated_at }}
+            
+            *.WOLFI_BASE_DIGEST=${{ steps.meta.outputs.wolfi_base }}
+            *.WOLFI_STATIC_DIGEST=${{ steps.meta.outputs.wolfi_static }}
