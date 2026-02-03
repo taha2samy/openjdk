@@ -28,8 +28,8 @@ jobs:
             git config --global user.name 'SpecterBot'
             git config --global user.email 'bot@specterstack.com'
 
-            git add versions.json
-            git commit -m "chore: update java versions"
+            git add versions.hcl
+            git commit -m "chore: update java hcl file"
             git push
           else
             echo "changed=false" >> $GITHUB_OUTPUT
