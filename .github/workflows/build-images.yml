@@ -78,3 +78,10 @@ jobs:
             subject-name: ${{ env.IMAGE_NAME }}
             subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
             push-to-registry: true
+        - name: Remove dangling images from Docker Hub
+          uses: nrukavkov/delete-docker-hub-tag@v1
+          with:
+            delete_untagged: "true"
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+            repository: ${{ env.IMAGE_NAME }}
