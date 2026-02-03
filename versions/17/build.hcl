@@ -14,6 +14,8 @@ variable "JAVA17_UPSTREAM_UPDATE" {}
 variable "CACHE_TAG" {
     default = "cache-17"
 }
+variable "WOLFI_BASE_DIGEST" {}
+variable "WOLFI_STATIC_DIGEST" {}
 target "java17-jre-std" {
     inherits = ["_common"]
     context = "./versions/17"

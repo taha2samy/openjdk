@@ -2,14 +2,10 @@ variable "REGISTRY" {
   default = "docker.io/taha2samy"
 }
 
-variable "WOLFI_BASE_DIGEST" {
-  default = "latest"
-}
 
-variable "WOLFI_STATIC_DIGEST" {
-  default = "latest"
-}
 
+variable "CACHE_TAG" {
+}
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
   cache-from = ["type=registry,ref=${REGISTRY}/java:${CACHE_TAG}"]
