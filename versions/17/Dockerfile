@@ -70,9 +70,9 @@ COPY --from=helper /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=helper /usr/lib/libstdc++.so.6* /usr/lib/
 COPY --from=helper /usr/lib/libgcc_s.so.1 /usr/lib/
 COPY --from=helper /usr/lib/libz.so* /usr/lib/
-COPY --from=helper /lib/ld-linux-x86-64.so.2* /lib/ 2>/dev/null || true
-COPY --from=helper /lib/ld-linux-aarch64.so.1* /lib/ 2>/dev/null || true
+COPY --from=helper /lib/ld-linux-* /lib/
 COPY --from=cleaner /opt/java-slim /opt/java
+
 ENV JAVA_HOME=/opt/java
 ENV PATH="/opt/java/bin:${PATH}"
 ENV LANG=C.UTF-8
