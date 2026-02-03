@@ -16,6 +16,18 @@ target "_common" {
 
 }
 
+group "java8" {
+  targets = ["java8-jre-std", "java8-jdk-std", "java8-jre-distroless"]
+}
+
+group "java11" {
+  targets = ["java11-jre-std", "java11-jdk-std", "java11-jre-distroless"]
+}
+
 group "java17" {
   targets = ["java17-jre-std", "java17-jdk-std", "java17-jre-distroless"]
+}
+
+group "java21" {
+  targets = ["java21-jre-std", "java21-jdk-std", "java21-jre-distroless"]
 }
