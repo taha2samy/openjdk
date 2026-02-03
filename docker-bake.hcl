@@ -3,10 +3,6 @@ variable "REGISTRY" {
 }
 
 
-
-
-variable "CACHE_TAG" {
-}
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
   cache-from = ["type=registry,ref=${REGISTRY}/openjdk:${CACHE_TAG}"]
@@ -15,10 +11,7 @@ target "_common" {
     "type=provenance,mode=max",
     "type=sbom"
   ]
-  args = {
-    WOLFI_BASE_DIGEST = WOLFI_BASE_DIGEST
-    WOLFI_STATIC_DIGEST = WOLFI_STATIC_DIGEST
-  }
+
 }
 
 group "java17" {

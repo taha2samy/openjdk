@@ -1,3 +1,7 @@
+variable "CACHE_TAG" {
+    default = "cache-17"
+}
+
 variable "JAVA17_JRE_AMD64_URL" {}
 variable "JAVA17_JRE_AMD64_SHA" {}
 variable "JAVA17_JRE_ARM64_URL" {}
@@ -11,12 +15,6 @@ variable "JAVA17_SEC_LEVEL" {}
 variable "JAVA17_SEMVER" {}
 variable "JAVA17_SCM_REF" {}
 variable "JAVA17_UPSTREAM_UPDATE" {}
-
-variable "CACHE_TAG" {
-    default = "cache-17"
-}
-variable "WOLFI_BASE_DIGEST" {}
-variable "WOLFI_STATIC_DIGEST" {}
 
 target "_java17-common" {
     inherits = ["_common"]
