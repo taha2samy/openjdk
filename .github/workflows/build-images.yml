@@ -73,7 +73,6 @@ jobs:
                 targets: java${{ matrix.java_version }}
                 push: true
                 set: |
-                  # باصي لمتغيرات الـ HCL مباشرة (نفس الأسماء اللي في build.hcl)
                   *.JAVA${{ matrix.java_version }}_JRE_AMD64_URL=${{ steps.meta.outputs.jre_amd_url }}
                   *.JAVA${{ matrix.java_version }}_JRE_AMD64_SHA=${{ steps.meta.outputs.jre_amd_sha }}
                   *.JAVA${{ matrix.java_version }}_JRE_ARM64_URL=${{ steps.meta.outputs.jre_arm_url }}
@@ -90,6 +89,5 @@ jobs:
                   *.JAVA${{ matrix.java_version }}_SCM_REF=${{ steps.meta.outputs.scm_ref }}
                   *.JAVA${{ matrix.java_version }}_UPSTREAM_UPDATE=${{ steps.meta.outputs.updated_at }}
                   
-                  # باصي الـ Digests العامة
                   *.WOLFI_BASE_DIGEST=${{ steps.meta.outputs.wolfi_base }}
                   *.WOLFI_STATIC_DIGEST=${{ steps.meta.outputs.wolfi_static }}
