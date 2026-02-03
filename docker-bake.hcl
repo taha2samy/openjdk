@@ -6,12 +6,17 @@ variable "WOLFI_BASE_DIGEST" {
   default = "latest"
 }
 
+variable "CACHE_TAG" {
+  
+}
 variable "WOLFI_STATIC_DIGEST" {
   default = "latest"
 }
 
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
+  cache-from = ["type=registry,ref=${REGISTRY}/java:${CACHE_TAG}"]
+  cache-to   = ["type=registry,ref=${REGISTRY}/java:${CACHE_TAG},mode=max"]
   attest = [
     "type=provenance,mode=max",
     "type=sbom"
