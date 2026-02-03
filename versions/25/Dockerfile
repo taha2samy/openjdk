@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+ARG WOLFI_BASE_DIGEST=sha256:2bdab5abde97a1487c667d3ffcc7265fa9abdeb5b2365bca9a64a5f3afc5a563
+ARG WOLFI_STATIC_DIGEST=sha256:9cef3c6a78264cb7e25923bf1bf7f39476dccbcc993af9f4ffeb191b77a7951e
 
 FROM alpine:3.19 AS fetcher
 ARG TARGETARCH
@@ -7,7 +9,7 @@ ARG JAVA_URL_AARCH64
 ARG JAVA_SHA_AMD64
 ARG JAVA_SHA_AARCH64
 
-RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_21 \
+RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_25 \
     apk add --no-cache curl tar && \
     set -ux; \
     if [ "$TARGETARCH" = "amd64" ]; then \
@@ -34,13 +36,13 @@ RUN rm -rf /opt/java-slim/jmods \
     /opt/java-slim/docs
 
 FROM cgr.dev/chainguard/wolfi-base:latest AS helper
-RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_helper_21 \
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_helper_25 \
     apk add --no-cache libstdc++ zlib tzdata posix-libc-utils
 RUN addgroup -g 1000 java && adduser -u 1000 -G java -D -s /bin/bash java
 RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/lib/libz.so
 
 FROM cgr.dev/chainguard/wolfi-base:latest AS jdk-standard
-RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jdk_21 \
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jdk_25 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
@@ -50,8 +52,8 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 USER java
 WORKDIR /home/java
 
-FROM cgr.dev/chainguard/wolfi-base :latest AS jre-standard
-RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_21 \
+FROM cgr.dev/chainguard/wolfi-base:latest AS jre-standard
+RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_25 \
     apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf

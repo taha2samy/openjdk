@@ -31,3 +31,7 @@ group "java17" {
 group "java21" {
   targets = ["java21-jre-std", "java21-jdk-std", "java21-jre-distroless"]
 }
+group "java25" {
+  targets = ["java25-jre-std", "java25-jdk-std", "java25-jre-distroless"]
+}
+

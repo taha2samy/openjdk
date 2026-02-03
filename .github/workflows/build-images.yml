@@ -6,11 +6,11 @@ on:
       java_8:
         description: 'Java 8'
         type: boolean
-        default: false
+        default: true
       java_11:
         description: 'Java 11'
         type: boolean
-        default: false
+        default: true
       java_17:
         description: 'Java 17'
         type: boolean
@@ -18,7 +18,11 @@ on:
       java_21:
         description: 'Java 21'
         type: boolean
-        default: false
+        default: true
+      java_25:
+        description: 'Java 25'
+        type: boolean
+        default: true
 
 env:
   IMAGE_NAME: docker.io/taha2samy/java
@@ -36,6 +40,7 @@ jobs:
           ${{ github.event.inputs.java_11 }} && VERSIONS+=("11")
           ${{ github.event.inputs.java_17 }} && VERSIONS+=("17")
           ${{ github.event.inputs.java_21 }} && VERSIONS+=("21")
+          ${{ github.event.inputs.java_25 }} && VERSIONS+=("25")
           
           JSON_ARRAY=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s -c .)
           
