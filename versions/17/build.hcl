@@ -11,12 +11,17 @@ variable "JAVA17_SEC_LEVEL" {}
 variable "JAVA17_SEMVER" {}
 variable "JAVA17_SCM_REF" {}
 variable "JAVA17_UPSTREAM_UPDATE" {}
-variable "CACHE_TAG" { default = "cache-17" }
+
+variable "CACHE_TAG" {
+    default = "cache-17"
+}
+variable "REGISTRY" {}
 variable "WOLFI_BASE_DIGEST" {}
 variable "WOLFI_STATIC_DIGEST" {}
 
-locals {
-    java17_common_args = {
+target "_java17-common" {
+    inherits = ["_common"]
+    args = {
         JAVA_VER             = "17"
         JAVA_FULL_VERSION    = JAVA17_FULL_VER
         JAVA_SECURITY_LEVEL  = JAVA17_SEC_LEVEL
@@ -29,43 +34,43 @@ locals {
 }
 
 target "java17-jre-std" {
-    inherits = ["_common"]
+    inherits = ["_java17-common"] 
     context  = "./versions/17"
     target   = "jre-standard"
-    args     = merge(local.java17_common_args, {
-    BUILD_TYPE       = "jre"
-    JAVA_URL_AMD64   = JAVA17_JRE_AMD64_URL
-    JAVA_SHA_AMD64   = JAVA17_JRE_AMD64_SHA
-    JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
-    JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
-  })
+    args     = {
+        BUILD_TYPE       = "jre"
+        JAVA_URL_AMD64   = JAVA17_JRE_AMD64_URL
+        JAVA_SHA_AMD64   = JAVA17_JRE_AMD64_SHA
+        JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
+        JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
+    }
     tags = ["${REGISTRY}/java:17-jre-wolfi"]
 }
 
 target "java17-jdk-std" {
-    inherits = ["_common"]
+    inherits = ["_java17-common"]  
     context  = "./versions/17"
     target   = "jdk-standard"
-    args     = merge(local.java17_common_args, {
-    BUILD_TYPE       = "jdk"
-    JAVA_URL_AMD64   = JAVA17_JDK_AMD64_URL
-    JAVA_SHA_AMD64   = JAVA17_JDK_AMD64_SHA
-    JAVA_URL_AARCH64 = JAVA17_JDK_ARM64_URL
-    JAVA_SHA_AARCH64 = JAVA17_JDK_ARM64_SHA
-  })
+    args     = {
+        BUILD_TYPE       = "jdk"
+        JAVA_URL_AMD64   = JAVA17_JDK_AMD64_URL
+        JAVA_SHA_AMD64   = JAVA17_JDK_AMD64_SHA
+        JAVA_URL_AARCH64 = JAVA17_JDK_ARM64_URL
+        JAVA_SHA_AARCH64 = JAVA17_JDK_ARM64_SHA
+    }
     tags = ["${REGISTRY}/java:17-jdk-wolfi"]
 }
 
 target "java17-jre-distroless" {
-    inherits = ["_common"]
+    inherits = ["_java17-common"] 
     context  = "./versions/17"
     target   = "jre-distroless"
-    args     = merge(local.java17_common_args, {
-    BUILD_TYPE       = "jre"
-    JAVA_URL_AMD64   = JAVA17_JRE_AMD64_URL
-    JAVA_SHA_AMD64   = JAVA17_JRE_AMD64_SHA
-    JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
-    JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
-  })
+    args     = {
+        BUILD_TYPE       = "jre"
+        JAVA_URL_AMD64   = JAVA17_JRE_AMD64_URL
+        JAVA_SHA_AMD64   = JAVA17_JRE_AMD64_SHA
+        JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
+        JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
+    }
     tags = ["${REGISTRY}/java:17-jre-distroless"]
 }
