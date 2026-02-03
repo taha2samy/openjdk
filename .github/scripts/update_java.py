@@ -4,17 +4,16 @@ import os
 from datetime import datetime
 
 JAVA_VERSIONS = [8, 11, 17, 21, 25]
+IMAGE_TYPES = ["jdk", "jre"]
 ARCHITECTURES = {
     "amd64": "x64",
     "arm64": "aarch64"
 }
 ADOPTIUM_API_BASE = "https://api.adoptium.net/v3/assets/latest"
-
 WOLFI_IMAGES = {
     "base": "cgr.dev/chainguard/wolfi-base",
     "static": "cgr.dev/chainguard/static"
 }
-
 DB_FILE = "versions.json"
 
 def get_docker_token(registry, repository):
@@ -39,11 +38,9 @@ def fetch_image_digest(full_image_name, tag="latest"):
                 repository = f"library/{repository}"
 
         manifest_url = f"https://{registry}/v2/{repository}/manifests/{tag}"
-        
         headers = {
             "Accept": "application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json"
         }
-
         response = requests.head(manifest_url, headers=headers, timeout=10)
 
         if response.status_code == 401:
@@ -53,27 +50,22 @@ def fetch_image_digest(full_image_name, tag="latest"):
                 response = requests.head(manifest_url, headers=headers, timeout=10)
 
         response.raise_for_status()
-        
-        digest = response.headers.get("Docker-Content-Digest")
-        return digest
-
+        return response.headers.get("Docker-Content-Digest")
     except Exception:
         return None
 
-def fetch_java_metadata(major_version, arch):
+def fetch_java_metadata(major_version, arch, image_type):
     url = f"{ADOPTIUM_API_BASE}/{major_version}/hotspot"
     params = {
         "architecture": arch,
-        "image_type": "jdk",
+        "image_type": image_type,
         "os": "linux",
         "vendor": "eclipse"
     }
-    
     try:
         response = requests.get(url, params=params, timeout=15)
         response.raise_for_status()
         data = response.json()
-        
         if not data:
             return None
             
@@ -97,6 +89,7 @@ def fetch_java_metadata(major_version, arch):
             "release_link": item.get('release_link'),
             "release_name": item.get('release_name'),
             "vendor": item.get('vendor'),
+            "image_type": image_type,
             "workflow_run_id": os.getenv("GITHUB_RUN_ID", "local-manual-run"),
             "workflow_name": os.getenv("GITHUB_WORKFLOW", "manual-execution"),
         }
@@ -119,29 +112,27 @@ def main():
     for v in JAVA_VERSIONS:
         ver_key = f"java{v}"
         new_data[ver_key] = {}
-        
-        for arch_id, api_arch in ARCHITECTURES.items():
-            result = fetch_java_metadata(v, api_arch)
-            if result:
-                new_data[ver_key][arch_id] = result
-                
-                old_sha = current_data.get(ver_key, {}).get(arch_id, {}).get("sha")
-                if result["sha"] != old_sha:
-                    has_changes = True
+        for img_type in IMAGE_TYPES:
+            new_data[ver_key][img_type] = {}
+            for arch_id, api_arch in ARCHITECTURES.items():
+                result = fetch_java_metadata(v, api_arch, img_type)
+                if result:
+                    new_data[ver_key][img_type][arch_id] = result
+                    old_sha = current_data.get(ver_key, {}).get(img_type, {}).get(arch_id, {}).get("sha")
+                    if result["sha"] != old_sha:
+                        has_changes = True
 
     new_data["wolfi"] = {}
     for wolfi_type, image_name in WOLFI_IMAGES.items():
         digest = fetch_image_digest(image_name, "latest")
-        
         if digest:
             wolfi_entry = {
                 "image": image_name,
                 "tag": "latest",
                 "digest": digest,
-                "updated_at_check": os.getenv("GITHUB_RUN_ID", "local-run")
+                "workflow_run_id": os.getenv("GITHUB_RUN_ID", "local-run"),
             }
             new_data["wolfi"][wolfi_type] = wolfi_entry
-
             old_digest = current_data.get("wolfi", {}).get(wolfi_type, {}).get("digest")
             if digest != old_digest:
                 has_changes = True
