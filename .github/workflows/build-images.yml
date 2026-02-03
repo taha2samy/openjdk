@@ -5,107 +5,93 @@ on:
 
 env:
   IMAGE_NAME: docker.io/taha2samy/java
-  DOCKERHUB_ORG: taha2samy
-  DOCKERHUB_REPO: java
 
 jobs:
-  prepare-cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Take Repo Snapshot
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_ORG: ${{ env.DOCKERHUB_ORG }}
-          DOCKERHUB_REPO: ${{ env.DOCKERHUB_REPO }}
-        run: python .github/scripts/pre_build_snapshot.py
-      - name: Upload Snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: repo-snapshot
-          path: old_digests.json
-
   build:
-    needs: prepare-cleanup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        java_version: [17]
-    permissions:
-      contents: read
-      packages: write
-      id-token: write 
-      attestations: write
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Docker Bake (Build and Push)
-        id: bake
-        uses: docker/bake-action@v5
-        with:
-          files: |
-            docker-bake.hcl
-            versions/${{ matrix.java_version }}/build.hcl
-            versions.hcl
-          targets: java${{ matrix.java_version }}
-          push: true
-      - name: Extract Digests
-        id: digests
-        run: |
-          METADATA='${{ steps.bake.outputs.metadata }}'
-          JDK_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"."containerimage.digest"')
-          echo "JDK_DIGEST=$JDK_DIGEST" >> $GITHUB_OUTPUT
-          JRE_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"."containerimage.digest"')
-          echo "JRE_DIGEST=$JRE_DIGEST" >> $GITHUB_OUTPUT
-          DISTRO_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"."containerimage.digest"')
-          echo "DISTRO_DIGEST=$DISTRO_DIGEST" >> $GITHUB_OUTPUT
-      - name: Attest JDK Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name:  ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.digests.outputs.JDK_DIGEST }}
-          push-to-registry: true
-      - name: Attest JRE Standard Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.digests.outputs.JRE_DIGEST }}
-          push-to-registry: true
-      - name: Attest JRE Distroless Image
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
-          push-to-registry: true
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write
+        id-token: write 
+        attestations: write
+      strategy:
+        fail-fast: false
+        matrix:
+          java_version: [17]
+
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            registry: docker.io
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+        - name: Docker Bake (Build and Push)
+          id: bake
+          uses: docker/bake-action@v5
+          with:
+            files: |
+              docker-bake.hcl
+              versions/${{ matrix.java_version }}/build.hcl
+              versions.hcl
+            targets: java${{ matrix.java_version }}
+            push: true
+
+        - name: Extract Digests
+          id: digests
+          run: |
+            METADATA='${{ steps.bake.outputs.metadata }}'
+
+            JDK_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"."containerimage.digest"')
+            echo "JDK_DIGEST=$JDK_DIGEST" >> $GITHUB_OUTPUT
+
+            JRE_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"."containerimage.digest"')
+            echo "JRE_DIGEST=$JRE_DIGEST" >> $GITHUB_OUTPUT
+
+            DISTRO_DIGEST=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"."containerimage.digest"')
+            echo "DISTRO_DIGEST=$DISTRO_DIGEST" >> $GITHUB_OUTPUT
+
+        - name: Attest JDK Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name:  ${{ env.IMAGE_NAME }}
+            subject-digest: ${{ steps.digests.outputs.JDK_DIGEST }}
+            push-to-registry: true
+
+        - name: Attest JRE Standard Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name: ${{ env.IMAGE_NAME }}
+            subject-digest: ${{ steps.digests.outputs.JRE_DIGEST }}
+            push-to-registry: true
+
+        - name: Attest JRE Distroless Image
+          uses: actions/attest-build-provenance@v1
+          with:
+            subject-name: ${{ env.IMAGE_NAME }}
+            subject-digest: ${{ steps.digests.outputs.DISTRO_DIGEST }}
+            push-to-registry: true
 
   cleanup:
-    runs-on: ubuntu-latest
-    needs: [prepare-cleanup, build]
-    if: success()
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Download Snapshot
-        uses: actions/download-artifact@v4
-        with:
-          name: repo-snapshot
-      - name: Install Requests
-        run: pip install requests
-      - name: Run Post-build Cleanup
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_ORG: ${{ env.DOCKERHUB_ORG }}
-          DOCKERHUB_REPO: ${{ env.DOCKERHUB_REPO }}
-        run: python .github/scripts/post_build_cleanup.py
+      runs-on: ubuntu-latest
+      needs: build
+      if: success()
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+        - name: Install Requests
+          run: pip install requests
+        - name: Delete Old Dangling Images
+          env:
+            DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+            DOCKERHUB_ORG: taha2samy
+            DOCKERHUB_REPO: openjdk
+          run: python .github/scripts/clean_dockerhub.py
