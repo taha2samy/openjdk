@@ -15,7 +15,6 @@ variable "JAVA17_UPSTREAM_UPDATE" {}
 variable "CACHE_TAG" {
     default = "cache-17"
 }
-variable "REGISTRY" {}
 variable "WOLFI_BASE_DIGEST" {}
 variable "WOLFI_STATIC_DIGEST" {}
 

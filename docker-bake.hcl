@@ -2,8 +2,6 @@ variable "REGISTRY" {
   default = "docker.io/taha2samy"
 }
 
-variable "WOLFI_BASE_DIGEST" {}
-variable "WOLFI_STATIC_DIGEST" {}
 
 
 
