@@ -1,14 +1,27 @@
-variable "REGISTRY" {
+variable "DOCKER_REGISTRY" {
   default = "docker.io/taha2samy"
 }
-variable "REPO" {
+
+variable "GHCR_REGISTRY" {
+  default = "ghcr.io/taha2samy"
+}
+
+variable "REPO_DOCKER" {
   default = "java"
+}
+
+variable "REPO_GHCR" {
+  default = "open-jdk"
+}
+
+variable "CACHE_TAG" {
+  default = "cache"
 }
 
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
-  cache-from = ["type=registry,ref=${REGISTRY}/${REPO}:${CACHE_TAG}"]
-  cache-to   = ["type=registry,ref=${REGISTRY}/${REPO}:${CACHE_TAG},mode=min"]
+  cache-from = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}:${CACHE_TAG}"]
+  cache-to   = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}:${CACHE_TAG},mode=min"]
   attest = [
     "type=provenance,mode=max",
     "type=sbom"

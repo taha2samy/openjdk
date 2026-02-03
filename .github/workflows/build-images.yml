@@ -4,28 +4,27 @@ on:
   workflow_dispatch:
     inputs:
       java_8:
-        description: 'Java 8'
         type: boolean
         default: true
       java_11:
-        description: 'Java 11'
         type: boolean
         default: true
       java_17:
-        description: 'Java 17'
         type: boolean
         default: true
       java_21:
-        description: 'Java 21'
         type: boolean
         default: true
       java_25:
-        description: 'Java 25'
+        type: boolean
+        default: true
+      publish:
         type: boolean
         default: true
 
 env:
-  IMAGE_NAME: docker.io/taha2samy/java
+  DOCKER_IMAGE: docker.io/taha2samy/java
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/java
 
 jobs:
   define-matrix:
@@ -41,15 +40,12 @@ jobs:
           ${{ github.event.inputs.java_17 }} && VERSIONS+=("17")
           ${{ github.event.inputs.java_21 }} && VERSIONS+=("21")
           ${{ github.event.inputs.java_25 }} && VERSIONS+=("25")
-          
           JSON_ARRAY=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s -c .)
-          
-          echo "Selected versions: $JSON_ARRAY"
           echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
 
   build:
     needs: define-matrix
-    if: needs.define-matrix.outputs.versions != '[]' && needs.define-matrix.outputs.versions != ''
+    if: needs.define-matrix.outputs.versions != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -70,12 +66,21 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
+        if: github.event.inputs.publish == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Docker Bake (Build and Push)
+      - name: Login to GHCR
+        if: github.event.inputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }} 
+
+      - name: Docker Bake
         id: bake
         uses: docker/bake-action@v5
         with:
@@ -84,16 +89,19 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
             versions.hcl
           targets: java${{ matrix.java_version }}
-          push: true
+          push: ${{ github.event.inputs.publish }}
+          set: |
+            *.args.GHCR_REGISTRY=ghcr.io/${{ github.repository_owner }}
 
-      - name: Extract and Attest
+      - name: Attest Images
+        if: github.event.inputs.publish == 'true'
         run: |
           METADATA='${{ steps.bake.outputs.metadata }}'
           for TARGET in "jdk-std" "jre-std" "jre-distroless"; do
             DIGEST=$(echo "$METADATA" | jq -r ".\"java${{ matrix.java_version }}-$TARGET\"[\"containerimage.digest\"]")
-            if [ "$DIGEST" != "null" ]; then
-              echo "Attesting java${{ matrix.java_version }}-$TARGET with digest $DIGEST"
-              gh attestation verify "$DIGEST" --repo ${{ github.repository }} || echo "Creating attestation..."
+            if [ "$DIGEST" != "null" ] && [ "$DIGEST" != "" ]; then
+              gh attestation create --repo ${{ github.repository }} --subject-name ${{ env.DOCKER_IMAGE }} --subject-digest $DIGEST
+              gh attestation create --repo ${{ github.repository }} --subject-name ${{ env.GHCR_IMAGE }} --subject-digest $DIGEST
             fi
           done
         env:

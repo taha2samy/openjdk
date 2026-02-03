@@ -41,7 +41,7 @@ target "java17-jre-std" {
         JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
         JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
     }
-    tags = ["${REGISTRY}/${REPO}:17-jre-std"]
+    tags = ["${DOCKER_REGISTRY}/${REPO_DOCKER}:17-jre-std", "${GHCR_REGISTRY}/${REPO_GHCR}:17-jre-std"]
 }
 
 target "java17-jdk-std" {
@@ -55,7 +55,7 @@ target "java17-jdk-std" {
         JAVA_URL_AARCH64 = JAVA17_JDK_ARM64_URL
         JAVA_SHA_AARCH64 = JAVA17_JDK_ARM64_SHA
     }
-    tags = ["${REGISTRY}/${REPO}:17-jdk-std"]
+    tags = ["${DOCKER_REGISTRY}/${REPO_DOCKER}:17-jdk-std", "${GHCR_REGISTRY}/${REPO_GHCR}:17-jdk-std"]
 }
 
 target "java17-jre-distroless" {
@@ -69,5 +69,5 @@ target "java17-jre-distroless" {
         JAVA_URL_AARCH64 = JAVA17_JRE_ARM64_URL
         JAVA_SHA_AARCH64 = JAVA17_JRE_ARM64_SHA
     }
-    tags = ["${REGISTRY}/${REPO}:17-jre-distroless"]
+    tags = ["${DOCKER_REGISTRY}/${REPO_DOCKER}:17-jre-distroless", "${GHCR_REGISTRY}/${REPO_GHCR}:17-jre-distroless"]
 }

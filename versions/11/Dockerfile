@@ -28,7 +28,6 @@ RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_11 \
 
 FROM cgr.dev/chainguard/wolfi-base@${WOLFI_BASE_DIGEST} AS cleaner
 COPY --from=fetcher /opt/java-full /opt/java-slim
-# تنظيف Java 11 (حذف jmods ضروري جداً لتوفير المساحة في JRE)
 RUN rm -rf /opt/java-slim/jmods \
     /opt/java-slim/lib/src.zip \
     /opt/java-slim/demo \

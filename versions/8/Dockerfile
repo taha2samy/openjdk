@@ -25,7 +25,6 @@ RUN --mount=type=cache,target=/var/cache/java_download,id=java_downloads_8 \
 
 FROM cgr.dev/chainguard/wolfi-base:latest AS cleaner
 COPY --from=fetcher /opt/java-full /opt/java-slim
-# تنظيف ملفات Java 8 (لا يوجد jmods في Java 8)
 RUN rm -rf /opt/java-slim/src.zip \
     /opt/java-slim/demo \
     /opt/java-slim/sample \
