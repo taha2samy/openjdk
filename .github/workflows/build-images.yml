@@ -80,7 +80,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }} 
-
+      - name: generate versions
+        run: |
+          pip install jinja2
+          python .github/scripts/render_templates.py
       - name: Docker Bake
         id: bake
         uses: docker/bake-action@v5

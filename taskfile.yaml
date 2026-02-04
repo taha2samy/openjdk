@@ -5,3 +5,7 @@ tasks:
     cmds:
       - python .github/scripts/update_java.py
     silent: true
+  generate-template:
+    cmds:
+      - python .github/scripts/render_templates.py
+    silent: true
