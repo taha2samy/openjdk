@@ -11,7 +11,7 @@ variable "REPO_DOCKER" {
 }
 
 variable "REPO_GHCR" {
-  default = "open-jdk"
+  default = "java"
 }
 
 variable "CACHE_TAG" {
