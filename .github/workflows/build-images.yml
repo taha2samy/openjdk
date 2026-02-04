@@ -128,7 +128,7 @@ jobs:
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3   
         with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/openjdk
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
@@ -162,7 +162,7 @@ jobs:
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/openjdk
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
 
@@ -174,18 +174,18 @@ jobs:
         run: |
           echo "🔍 Verifying SLSA Provenance for JDK..."
           if [ "${{ steps.digests.outputs.jdk }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.jdk }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.jdk }} \
               --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for JRE..."
           if [ "${{ steps.digests.outputs.jre }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.jre }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.jre }} \
               --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for Distroless..."
           if [ "${{ steps.digests.outputs.distro }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.distro }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.distro }} \
               --owner ${{ env.OWNER_LC }}
           fi
