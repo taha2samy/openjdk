@@ -24,7 +24,6 @@ on:
 
 env:
   DOCKER_IMAGE: docker.io/taha2samy/java
-  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/java
 
 jobs:
   define-matrix:
@@ -63,6 +62,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Lowercase Repository Owner
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -78,12 +83,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ env.OWNER_LC }} # استخدمنا الاسم الصغير
           password: ${{ secrets.GITHUB_TOKEN }} 
+      
       - name: generate versions
         run: |
           pip install jinja2
           python .github/scripts/render_templates.py
+
       - name: Docker Bake
         id: bake
         uses: docker/bake-action@v5
@@ -95,7 +102,7 @@ jobs:
           targets: java${{ matrix.java_version }}
           push: ${{ github.event.inputs.publish }}
           set: |
-            *.args.GHCR_REGISTRY=ghcr.io/${{ github.repository_owner }}
+            *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
 
       - name: Extract Digests
         id: digests
@@ -106,6 +113,7 @@ jobs:
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
+      # ---------------- JDK ----------------
       - name: Attest JDK (Docker Hub)
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3  
@@ -118,10 +126,11 @@ jobs:
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3   
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
+      # ---------------- JRE ----------------
       - name: Attest JRE (Docker Hub)
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
@@ -134,10 +143,11 @@ jobs:
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
+      # ---------------- Distroless ----------------
       - name: Attest Distroless (Docker Hub)
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
@@ -150,9 +160,11 @@ jobs:
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
+
+      # ---------------- Verification ----------------
       - name: Verify SLSA 3 Attestation
         if: github.event.inputs.publish == 'true'
         env:
@@ -160,18 +172,18 @@ jobs:
         run: |
           echo "🔍 Verifying SLSA Provenance for JDK..."
           if [ "${{ steps.digests.outputs.jdk }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.jdk }} \
-              --owner ${{ github.repository_owner }}
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.jdk }} \
+              --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for JRE..."
           if [ "${{ steps.digests.outputs.jre }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.jre }} \
-              --owner ${{ github.repository_owner }}
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.jre }} \
+              --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for Distroless..."
           if [ "${{ steps.digests.outputs.distro }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.distro }} \
-              --owner ${{ github.repository_owner }}
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/java@${{ steps.digests.outputs.distro }} \
+              --owner ${{ env.OWNER_LC }}
           fi
