@@ -112,6 +112,8 @@ jobs:
           echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+      - name: Show Bake Metadata
+        run: echo '${{ steps.bake.outputs.metadata }}' | jq .
 
       # ---------------- JDK ----------------
       - name: Attest JDK (Docker Hub)
