@@ -47,7 +47,7 @@ RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/
 
 FROM cgr.dev/chainguard/wolfi-base@{{WOLFI_BASE_DIGEST}} AS jdk-standard
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jdk_{{ version }} \
-    apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
+    apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils bash
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=helper /usr/lib/libz.so* /usr/lib/
@@ -58,7 +58,7 @@ WORKDIR /home/java
 
 FROM cgr.dev/chainguard/wolfi-base@{{WOLFI_BASE_DIGEST}} AS jre-standard
 RUN --mount=type=cache,target=/var/cache/apk,id=apk_cache_jre_{{ version }} \
-    apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils
+    apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils bash
 COPY --from=helper /etc/passwd /etc/group /etc/
 COPY --from=helper /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=helper /usr/lib/libz.so* /usr/lib/
