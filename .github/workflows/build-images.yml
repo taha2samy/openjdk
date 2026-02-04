@@ -80,6 +80,22 @@ jobs:
           pip install jinja2
           python .github/scripts/render_templates.py
 
+          
+      - name: Login to Docker Hub
+        if: github.event.inputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Login to GHCR
+        if: github.event.inputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.OWNER_LC }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build for Testing (Load to Docker)
         uses: docker/bake-action@v5
         with:
@@ -123,20 +139,7 @@ jobs:
           ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-std" "jre"
           ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-distroless" "distroless"
 
-      - name: Login to Docker Hub
-        if: github.event.inputs.publish == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Login to GHCR
-        if: github.event.inputs.publish == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ env.OWNER_LC }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push (Multi-Arch)
         id: bake
