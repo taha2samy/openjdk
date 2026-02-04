@@ -171,7 +171,7 @@ jobs:
           push-to-registry: true
 
       - name: Verify SLSA 3 Attestation
-        if: github.event.inputs.publish == false
+        if: github.event.inputs.publish == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
