@@ -89,9 +89,11 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: false
+          load: true
+          provenance: false
+          sbom: false
           set: |
             *.platform=linux/amd64
-            *.output=type=docker
             *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
 
       - name: Install Trivy
