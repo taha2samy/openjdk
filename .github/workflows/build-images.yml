@@ -175,34 +175,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+            set -euo pipefail
 
-          verify_image () {
-            local NAME="$1"
-            local DIGEST="$2"
+            verify_image () {
+              local NAME="$1"
+              local DIGEST="$2"
 
-            if [ "$DIGEST" = "null" ] || [ -z "$DIGEST" ]; then
-              echo "⚠️  Skipping $NAME (no digest)"
-              return
-            fi
+              if [ "$DIGEST" = "null" ] || [ -z "$DIGEST" ]; then
+                echo "⚠️  Skipping $NAME (no digest)"
+                return
+              fi
 
-            echo "🔍 Verifying SLSA Provenance for $NAME"
-            echo "   Image: ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST"
-            echo "   Docker Hub: index.docker.io/taha2samy/java@$DIGEST"
+              echo "🔍 Verifying SLSA Provenance for $NAME"
+              echo "   GHCR: ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST"
+              echo "   Docker Hub: index.docker.io/taha2samy/java@$DIGEST"
 
-            if gh attestation verify \
-              oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST \
-              --owner ${{ env.OWNER_LC }} \
-              --verbose; then
+              # Verify and capture JSON output
+              OUTPUT=$(gh attestation verify \
+                oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST \
+                --owner ${{ env.OWNER_LC }} \
+                --format json)
+
+              echo "$OUTPUT" | jq .
+
               echo "✅ SLSA provenance VERIFIED for $NAME"
-            else
-              echo "❌ SLSA provenance FAILED for $NAME"
-              exit 1
-            fi
+              echo "----------------------------------------"
+            }
 
-            echo "----------------------------------------"
-          }
-
-          verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
-          verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
-          verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
+            verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
+            verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
+            verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
