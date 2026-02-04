@@ -162,25 +162,93 @@ jobs:
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
-      - name: Attest Images
+      # ---------------- JDK ----------------
+      - name: Attest JDK (Docker Hub)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v3  
+        with:
+          subject-name: index.docker.io/taha2samy/java
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      # ---------------- JRE ----------------
+      - name: Attest JRE (Docker Hub)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: index.docker.io/taha2samy/java
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      # ---------------- Distroless ----------------
+      - name: Attest Distroless (Docker Hub)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: index.docker.io/taha2samy/java
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
+      # ---------------- Verification ----------------
+
+      - name: Attest JDK (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v3   
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  # <--- تم التصليح هنا
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      # ---------------- JRE ----------------
+      - name: Attest JRE (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      # ---------------- Distroless ----------------
+      - name: Attest Distroless (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
+      - name: Verify SLSA 3 Attestation
         if: github.event.inputs.publish == 'true'
-        run: |
-            attest_img () {
-              local NAME="$1"
-              local DIGEST="$2"
-              if [ "$DIGEST" != "null" ] && [ -n "$DIGEST" ]; then
-                gh attestation create --repo ${{ github.repository }} \
-                  --subject-name index.docker.io/taha2samy/java \
-                  --subject-digest "$DIGEST"
-
-                gh attestation create --repo ${{ github.repository }} \
-                  --subject-name ghcr.io/${{ env.OWNER_LC }}/open-jdk \
-                  --subject-digest "$DIGEST"
-              fi
-            }
-
-            attest_img "JDK" "${{ steps.digests.outputs.jdk }}"
-            attest_img "JRE" "${{ steps.digests.outputs.jre }}"
-            attest_img "Distro" "${{ steps.digests.outputs.distro }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            set -euo pipefail
+
+            verify_image () {
+              local NAME="$1"
+              local DIGEST="$2"
+
+              if [ "$DIGEST" = "null" ] || [ -z "$DIGEST" ]; then
+                echo "⚠️  Skipping $NAME (no digest)"
+                return
+              fi
+
+              echo "🔍 Verifying SLSA Provenance for $NAME"
+              echo "   GHCR: ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST"
+              echo "   Docker Hub: index.docker.io/taha2samy/java@$DIGEST"
+
+              # Verify and capture JSON output
+              OUTPUT=$(gh attestation verify \
+                oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST \
+                --owner ${{ env.OWNER_LC }} \
+                --format json)
+
+              echo "$OUTPUT" | jq .
+
+              echo "✅ SLSA provenance VERIFIED for $NAME"
+              echo "----------------------------------------"
+            }
+
+            verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
+            verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
+            verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
