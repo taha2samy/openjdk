@@ -124,28 +124,12 @@ jobs:
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
-      - name: Attest JDK (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v3   
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/openjdk
-          subject-digest: ${{ steps.digests.outputs.jdk }}
-          push-to-registry: true
-
       # ---------------- JRE ----------------
       - name: Attest JRE (Docker Hub)
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: index.docker.io/taha2samy/java
-          subject-digest: ${{ steps.digests.outputs.jre }}
-          push-to-registry: true
-
-      - name: Attest JRE (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/java
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
@@ -158,17 +142,9 @@ jobs:
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
 
-      - name: Attest Distroless (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/openjdk
-          subject-digest: ${{ steps.digests.outputs.distro }}
-          push-to-registry: true
-
       # ---------------- Verification ----------------
       - name: Verify SLSA 3 Attestation
-        if: github.event.inputs.publish == 'true'
+        if: github.event.inputs.publish == false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
