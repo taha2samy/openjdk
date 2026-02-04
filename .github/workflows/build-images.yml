@@ -21,9 +21,13 @@ on:
       publish:
         type: boolean
         default: true
+      security_scan:
+        type: boolean
+        default: true
 
 env:
   DOCKER_IMAGE: docker.io/taha2samy/java
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/java
 
 jobs:
   define-matrix:
@@ -42,7 +46,7 @@ jobs:
           JSON_ARRAY=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s -c .)
           echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
 
-  build:
+  build-and-test:
     needs: define-matrix
     if: needs.define-matrix.outputs.versions != '[]'
     runs-on: ubuntu-latest
@@ -50,8 +54,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write 
+      id-token: write
       attestations: write
+      security-events: write
 
     strategy:
       fail-fast: false
@@ -63,13 +68,58 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lowercase Repository Owner
-        run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        run: echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
         env:
           OWNER: '${{ github.repository_owner }}'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Install Jinja2
+        run: |
+          pip install jinja2
+          python .github/scripts/render_templates.py
+
+      - name: Build for Testing (Load to Docker)
+        uses: docker/bake-action@v5
+        with:
+          files: |
+            docker-bake.hcl
+            versions/${{ matrix.java_version }}/build.hcl
+            versions.hcl
+          targets: java${{ matrix.java_version }}
+          push: false
+          set: |
+            *.platform=linux/amd64
+            *.output=type=docker
+            *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
+
+      - name: Install Trivy
+        if: github.event.inputs.security_scan == 'true'
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run Trivy Scan (Fail on HIGH/CRITICAL)
+        if: github.event.inputs.security_scan == 'true'
+        run: |
+          IMAGES=(
+            "docker.io/taha2samy/java:${{ matrix.java_version }}-jdk-std"
+            "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-std"
+            "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-distroless"
+          )
+
+          for IMG in "${IMAGES[@]}"; do
+            trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --vuln-type os,library "$IMG"
+          done
+
+      - name: Make verify script executable
+        run: chmod +x tests/verify.sh
+
+      - name: Run Functional Tests
+        run: |
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jdk-std" "jdk"
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-std" "jre"
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-distroless" "distroless"
 
       - name: Login to Docker Hub
         if: github.event.inputs.publish == 'true'
@@ -83,16 +133,12 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ env.OWNER_LC }} # استخدمنا الاسم الصغير
-          password: ${{ secrets.GITHUB_TOKEN }} 
-      
-      - name: generate versions
-        run: |
-          pip install jinja2
-          python .github/scripts/render_templates.py
+          username: ${{ env.OWNER_LC }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker Bake
+      - name: Build and Push (Multi-Arch)
         id: bake
+        if: github.event.inputs.publish == 'true'
         uses: docker/bake-action@v5
         with:
           files: |
@@ -100,7 +146,7 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
             versions.hcl
           targets: java${{ matrix.java_version }}
-          push: ${{ github.event.inputs.publish }}
+          push: true
           set: |
             *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
 
@@ -112,107 +158,26 @@ jobs:
           echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
-      - name: Show Bake Metadata
-        run: echo '${{ steps.bake.outputs.metadata }}' | jq .
 
-      # ---------------- JDK ----------------
-      - name: Attest JDK (Docker Hub)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v3  
-        with:
-          subject-name: index.docker.io/taha2samy/java
-          subject-digest: ${{ steps.digests.outputs.jdk }}
-          push-to-registry: true
-
-      # ---------------- JRE ----------------
-      - name: Attest JRE (Docker Hub)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: index.docker.io/taha2samy/java
-          subject-digest: ${{ steps.digests.outputs.jre }}
-          push-to-registry: true
-
-      # ---------------- Distroless ----------------
-      - name: Attest Distroless (Docker Hub)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: index.docker.io/taha2samy/java
-          subject-digest: ${{ steps.digests.outputs.distro }}
-          push-to-registry: true
-
-      # ---------------- Verification ----------------
-
-      - name: Attest JDK (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v3   
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  # <--- تم التصليح هنا
-          subject-digest: ${{ steps.digests.outputs.jdk }}
-          push-to-registry: true
-
-      # ---------------- JRE ----------------
-      - name: Attest JRE (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
-          subject-digest: ${{ steps.digests.outputs.jre }}
-          push-to-registry: true
-
-      # ---------------- Distroless ----------------
-      - name: Attest Distroless (GHCR)
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
-          subject-digest: ${{ steps.digests.outputs.distro }}
-          push-to-registry: true
-
-      - name: Verify SLSA 3 Attestation
+      - name: Attest Images
         if: github.event.inputs.publish == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            set -euo pipefail
-
-            verify_image () {
+            attest_img () {
               local NAME="$1"
               local DIGEST="$2"
+              if [ "$DIGEST" != "null" ] && [ -n "$DIGEST" ]; then
+                gh attestation create --repo ${{ github.repository }} \
+                  --subject-name index.docker.io/taha2samy/java \
+                  --subject-digest "$DIGEST"
 
-              if [ "$DIGEST" = "null" ] || [ -z "$DIGEST" ]; then
-                echo "⚠️  Skipping $NAME (no digest)"
-                return
+                gh attestation create --repo ${{ github.repository }} \
+                  --subject-name ghcr.io/${{ env.OWNER_LC }}/open-jdk \
+                  --subject-digest "$DIGEST"
               fi
-
-              echo "🔍 Verifying SLSA Provenance for $NAME"
-              echo "   GHCR: ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST"
-              echo "   Docker Hub: index.docker.io/taha2samy/java@$DIGEST"
-
-              # Verify and capture JSON output
-              OUTPUT=$(gh attestation verify \
-                oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST \
-                --owner ${{ env.OWNER_LC }} \
-                --format json)
-
-              echo "$OUTPUT" | jq .
-
-              echo "✅ SLSA provenance VERIFIED for $NAME"
-              echo "----------------------------------------"
             }
 
-            verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
-            verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
-            verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
-
-            
-      - name: Make script executable of Tests
-        run: chmod +x tests/verify.sh
-
-      - name: Test Images
-        if: github.event.inputs.publish == 'true'
-        run: |
-          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jdk-std" "jdk"
-          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-std" "jre"
-          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-distroless" "distroless"
+            attest_img "JDK" "${{ steps.digests.outputs.jdk }}"
+            attest_img "JRE" "${{ steps.digests.outputs.jre }}"
+            attest_img "Distro" "${{ steps.digests.outputs.distro }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
