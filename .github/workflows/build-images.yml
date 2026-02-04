@@ -106,26 +106,72 @@ jobs:
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
-      - name: Attest JDK
+      - name: Attest JDK (Docker Hub)
         if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3  
         with:
-          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-name: index.docker.io/taha2samy/java
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
-      - name: Attest JRE
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v1
+      - name: Attest JDK (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v3   
         with:
-          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      - name: Attest JRE (Docker Hub)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: index.docker.io/taha2samy/java
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
-      - name: Attest Distroless
-        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v1
+      - name: Attest JRE (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.DOCKER_IMAGE }}
+          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      - name: Attest Distroless (Docker Hub)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: index.docker.io/taha2samy/java
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
+
+      - name: Attest Distroless (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+      - name: Verify SLSA 3 Attestation
+        if: github.event.inputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Verifying SLSA Provenance for JDK..."
+          if [ "${{ steps.digests.outputs.jdk }}" != "null" ]; then
+            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.jdk }} \
+              --owner ${{ github.repository_owner }}
+          fi
+
+          echo "🔍 Verifying SLSA Provenance for JRE..."
+          if [ "${{ steps.digests.outputs.jre }}" != "null" ]; then
+            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.jre }} \
+              --owner ${{ github.repository_owner }}
+          fi
+
+          echo "🔍 Verifying SLSA Provenance for Distroless..."
+          if [ "${{ steps.digests.outputs.distro }}" != "null" ]; then
+            gh attestation verify oci://ghcr.io/${{ github.repository_owner }}/java@${{ steps.digests.outputs.distro }} \
+              --owner ${{ github.repository_owner }}
+          fi
