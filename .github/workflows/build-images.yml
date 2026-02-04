@@ -197,9 +197,17 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: true
-          set: |
-            *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
 
+      - name: Save bake metadata
+        run: |
+          echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
+
+      - name: Upload bake metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bake-metadata
+          path: ${{matrix.java_version}}bake-metadata.json
+          
       - name: Extract Digests
         id: digests
         run: |
