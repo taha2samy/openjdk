@@ -143,6 +143,33 @@ jobs:
           push-to-registry: true
 
       # ---------------- Verification ----------------
+
+      - name: Attest JDK (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v3   
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  # <--- تم التصليح هنا
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      # ---------------- JRE ----------------
+      - name: Attest JRE (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      # ---------------- Distroless ----------------
+      - name: Attest Distroless (GHCR)
+        if: github.event.inputs.publish == 'true' && steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ env.OWNER_LC }}/open-jdk  
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
       - name: Verify SLSA 3 Attestation
         if: github.event.inputs.publish == false
         env:
@@ -150,18 +177,18 @@ jobs:
         run: |
           echo "🔍 Verifying SLSA Provenance for JDK..."
           if [ "${{ steps.digests.outputs.jdk }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.jdk }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.jdk }} \
               --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for JRE..."
           if [ "${{ steps.digests.outputs.jre }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.jre }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.jre }} \
               --owner ${{ env.OWNER_LC }}
           fi
 
           echo "🔍 Verifying SLSA Provenance for Distroless..."
           if [ "${{ steps.digests.outputs.distro }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/openjdk@${{ steps.digests.outputs.distro }} \
+            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.distro }} \
               --owner ${{ env.OWNER_LC }}
           fi
