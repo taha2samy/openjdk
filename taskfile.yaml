@@ -5,7 +5,16 @@ tasks:
     cmds:
       - python .github/scripts/update_java.py
     silent: true
+
   generate-template:
     cmds:
       - python .github/scripts/render_templates.py
     silent: true
+
+  remove_last_runs:
+    cmds:
+      - |
+        gh run list --repo "$GITHUB_REPOSITORY" --limit 1000 --json databaseId -q '.[].databaseId' \
+        | xargs -n1 gh run delete --repo "$GITHUB_REPOSITORY"
+
+
