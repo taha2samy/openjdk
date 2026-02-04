@@ -205,3 +205,14 @@ jobs:
             verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
             verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
             verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
+
+            
+      - name: Make script executable of Tests
+        run: chmod +x tests/verify.sh
+
+      - name: Test Images
+        if: github.event.inputs.publish == 'true'
+        run: |
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jdk-std" "jdk"
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-std" "jre"
+          ./tests/verify.sh "docker.io/taha2samy/java:${{ matrix.java_version }}-jre-distroless" "distroless"
