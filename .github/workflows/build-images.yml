@@ -175,20 +175,34 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "🔍 Verifying SLSA Provenance for JDK..."
-          if [ "${{ steps.digests.outputs.jdk }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.jdk }} \
-              --owner ${{ env.OWNER_LC }}
-          fi
+          set -euo pipefail
 
-          echo "🔍 Verifying SLSA Provenance for JRE..."
-          if [ "${{ steps.digests.outputs.jre }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.jre }} \
-              --owner ${{ env.OWNER_LC }}
-          fi
+          verify_image () {
+            local NAME="$1"
+            local DIGEST="$2"
 
-          echo "🔍 Verifying SLSA Provenance for Distroless..."
-          if [ "${{ steps.digests.outputs.distro }}" != "null" ]; then
-            gh attestation verify oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@${{ steps.digests.outputs.distro }} \
-              --owner ${{ env.OWNER_LC }}
-          fi
+            if [ "$DIGEST" = "null" ] || [ -z "$DIGEST" ]; then
+              echo "⚠️  Skipping $NAME (no digest)"
+              return
+            fi
+
+            echo "🔍 Verifying SLSA Provenance for $NAME"
+            echo "   Image: ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST"
+            echo "   Docker Hub: index.docker.io/taha2samy/java@$DIGEST"
+
+            if gh attestation verify \
+              oci://ghcr.io/${{ env.OWNER_LC }}/open-jdk@$DIGEST \
+              --owner ${{ env.OWNER_LC }} \
+              --verbose; then
+              echo "✅ SLSA provenance VERIFIED for $NAME"
+            else
+              echo "❌ SLSA provenance FAILED for $NAME"
+              exit 1
+            fi
+
+            echo "----------------------------------------"
+          }
+
+          verify_image "JDK"        "${{ steps.digests.outputs.jdk }}"
+          verify_image "JRE"        "${{ steps.digests.outputs.jre }}"
+          verify_image "Distroless" "${{ steps.digests.outputs.distro }}"
