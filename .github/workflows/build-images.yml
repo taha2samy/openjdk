@@ -55,6 +55,9 @@ jobs:
       contents: read
       packages: write
       security-events: write
+      id-token: write
+      attestations: write
+      
 
     strategy:
       fail-fast: false
@@ -134,6 +137,11 @@ jobs:
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
 
+
+
+
+
+
   build-and-push:
     needs: [define-matrix, security-and-test]
     if: github.event.inputs.publish == 'true'
@@ -205,8 +213,8 @@ jobs:
       - name: Upload bake metadata artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bake-metadata
-          path: ${{matrix.java_version}}bake-metadata.json
+          name: ${{matrix.java_version}}-bake-metadata
+          path: bake-metadata.json
           
       - name: Extract Digests
         id: digests
@@ -218,7 +226,7 @@ jobs:
 
       - name: Attest JDK
         if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
@@ -226,7 +234,7 @@ jobs:
 
       - name: Attest JDK (GHCR)
         if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
@@ -234,7 +242,7 @@ jobs:
 
       - name: Attest JRE
         if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
@@ -242,7 +250,7 @@ jobs:
 
       - name: Attest JRE (GHCR)
         if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
@@ -250,7 +258,7 @@ jobs:
 
       - name: Attest Distroless
         if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
@@ -258,7 +266,7 @@ jobs:
 
       - name: Attest Distroless (GHCR)
         if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
