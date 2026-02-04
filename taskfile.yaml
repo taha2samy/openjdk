@@ -17,4 +17,15 @@ tasks:
         gh run list --repo "$GITHUB_REPOSITORY" --limit 1000 --json databaseId -q '.[].databaseId' \
         | xargs -n1 gh run delete --repo "$GITHUB_REPOSITORY"
 
-
+  generate-readme:
+    desc: "Generate README row for a Java version"
+    vars:
+      V: '{{.V | default "11"}}'
+    cmds:
+      - |
+        python3 .github/scripts/generate_readme.py \
+          --metadata 11-bake-metadata.json \
+          --template templates/java-version-row.md.j2 \
+          --version {{.V}} \
+          --output versions/{{.V}}/README_ROW.md
+    silent: false
