@@ -265,7 +265,7 @@ jobs:
               local DIGEST="$1"
               if [ "$DIGEST" != "null" ]; then
                 # Correct syntax: oci://image@digest
-                gh attestation verify "${{ env.GHCR_FULL_IMAGE }}@$DIGEST" --owner ${{ env.OWNER_LC }}
+                gh attestation verify "oci://${{ env.GHCR_FULL_IMAGE }}@$DIGEST" --owner ${{ env.OWNER_LC }}
               fi
             }
 
