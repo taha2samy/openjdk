@@ -226,10 +226,17 @@ jobs:
 
       - name: Extract SBOM Files
         run: |
-          [ "${{ steps.meta.outputs.jdk }}" != "null" ] && docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jdk }} --format "{{json .SBOM}}" > sbom-jdk.json
-          [ "${{ steps.meta.outputs.jre }}" != "null" ] && docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} --format "{{json .SBOM}}" > sbom-jre.json
-          [ "${{ steps.meta.outputs.distro }}" != "null" ] && docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} --format "{{json .SBOM}}" > sbom-distro.json
-
+          if [ "${{ steps.meta.outputs.jdk }}" != "null" ]; then
+            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jdk }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-jdk.json
+          fi
+          
+          if [ "${{ steps.meta.outputs.jre }}" != "null" ]; then
+            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-jre.json
+          fi
+          
+          if [ "${{ steps.meta.outputs.distro }}" != "null" ]; then
+            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-distro.json
+          fi
 
       # --- JDK Attestations (GHCR & Docker Hub) ---
       - uses: actions/attest-build-provenance@v3
