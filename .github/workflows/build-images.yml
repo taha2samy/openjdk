@@ -115,6 +115,11 @@ jobs:
           set: |
             *.platform=linux/amd64
             *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
+        env:
+          DOCKER_BUILD_SUMMARY: false
+          DOCKER_BUILD_RECORD_UPLOAD: false
+          DOCKER_BUILD_CHECKS_ANNOTATIONS: false
+          
   
 
 
