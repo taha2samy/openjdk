@@ -230,25 +230,21 @@ jobs:
           [ "${{ steps.meta.outputs.jre }}" != "null" ] && docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} --format "{{json .SBOM}}" > sbom-jre.json
           [ "${{ steps.meta.outputs.distro }}" != "null" ] && docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} --format "{{json .SBOM}}" > sbom-distro.json
 
-      # --- JDK Attestations ---
-      - name: Attest JDK (GHCR)
-        uses: actions/attest-build-provenance@v3
+
+      # --- JDK Attestations (GHCR & Docker Hub) ---
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jdk }}
           push-to-registry: true
-
-      - name: Attest JDK (Docker Hub)
-        uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jdk }}
           push-to-registry: true
-
-      - name: Attest JDK SBOM
-        uses: actions/attest-sbom@v3
+      - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
@@ -256,25 +252,20 @@ jobs:
           sbom-path: 'sbom-jdk.json'
           push-to-registry: true
 
-      # --- JRE Attestations ---
-      - name: Attest JRE (GHCR)
-        uses: actions/attest-build-provenance@v3
+      # --- JRE Attestations (GHCR & Docker Hub) ---
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jre != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jre }}
           push-to-registry: true
-
-      - name: Attest JRE (Docker Hub)
-        uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jre != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jre }}
           push-to-registry: true
-
-      - name: Attest JRE SBOM
-        uses: actions/attest-sbom@v3
+      - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.jre != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
@@ -282,31 +273,28 @@ jobs:
           sbom-path: 'sbom-jre.json'
           push-to-registry: true
 
-      # --- Distroless Attestations ---
-      - name: Attest Distro (GHCR)
-        uses: actions/attest-build-provenance@v3
+      # --- Distroless Attestations (GHCR & Docker Hub) ---
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.distro != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.distro }}
           push-to-registry: true
-
-      - name: Attest Distro (Docker Hub)
-        uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.distro != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.distro }}
           push-to-registry: true
-
-      - name: Attest Distro SBOM
-        uses: actions/attest-sbom@v3
+      - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.distro != 'null'
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.distro }}
           sbom-path: 'sbom-distro.json'
           push-to-registry: true
+
+
       - name: Verify All Attestations
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
