@@ -26,11 +26,10 @@ on:
         default: true
 
 env:
-  DOCKER_HUB_USER: taha2samy  
   DOCKER_REPO_NAME: java
-  DOCKER_FULL_IMAGE: index.docker.io/taha2samy/java
   GHCR_REPO_NAME: java
-  GHCR_FULL_IMAGE: ghcr.io/taha2samy/java
+  # Using standard github context for image names
+  DOCKER_FULL_IMAGE: index.docker.io/taha2samy/java
 
 jobs:
   define-matrix:
@@ -41,11 +40,12 @@ jobs:
       - id: set-versions
         run: |
           VERSIONS=()
-          ${{ github.event.inputs.java_8 }} && VERSIONS+=("8")
-          ${{ github.event.inputs.java_11 }} && VERSIONS+=("11")
-          ${{ github.event.inputs.java_17 }} && VERSIONS+=("17")
-          ${{ github.event.inputs.java_21 }} && VERSIONS+=("21")
-          ${{ github.event.inputs.java_25 }} && VERSIONS+=("25")
+          [[ "${{ github.event.inputs.java_8 }}" == "true" ]] && VERSIONS+=("8")
+          [[ "${{ github.event.inputs.java_11 }}" == "true" ]] && VERSIONS+=("11")
+          [[ "${{ github.event.inputs.java_17 }}" == "true" ]] && VERSIONS+=("17")
+          [[ "${{ github.event.inputs.java_21 }}" == "true" ]] && VERSIONS+=("21")
+          [[ "${{ github.event.inputs.java_25 }}" == "true" ]] && VERSIONS+=("25")
+          # Create JSON array
           JSON_ARRAY=$(printf '%s\n' "${VERSIONS[@]}" | jq -R . | jq -s -c .)
           echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
 
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Environment Variables
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "DOCKER_FULL_IMAGE=index.docker.io/taha2samy/${{ env.DOCKER_REPO_NAME }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
         env:
           OWNER: '${{ github.repository_owner }}'
 
@@ -81,7 +81,6 @@ jobs:
         run: |
           pip install jinja2
           python .github/scripts/render_templates.py
-          echo "Rendered Templates ffffffffffffffffffffff"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -95,10 +94,7 @@ jobs:
           registry: ghcr.io
           username: ${{ env.OWNER_LC }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: just
-        run: |
-          ls -la
-          tree
+
       - name: Build Local for Testing
         uses: docker/bake-action@v6
         with:
@@ -109,7 +105,7 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: false
-          load: true
+          load: true # Important: Loads images to local docker daemon for testing
           provenance: false
           sbom: false
           set: |
@@ -118,17 +114,12 @@ jobs:
         env:
           DOCKER_BUILD_SUMMARY: false
           DOCKER_BUILD_RECORD_UPLOAD: false
-          DOCKER_BUILD_CHECKS_ANNOTATIONS: false
-          
-  
-
-
-
 
       - name: Install Trivy
         if: github.event.inputs.security_scan == 'true'
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        uses: aquasecurity/setup-trivy@v0.2
+        with:
+          cache: true
 
       - name: Run Trivy Scan
         if: github.event.inputs.security_scan == 'true'
@@ -140,6 +131,7 @@ jobs:
           )
 
           for IMG in "${IMAGES[@]}"; do
+            echo "Scanning $IMG..."
             trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --vuln-type os,library "$IMG"
           done
 
@@ -149,15 +141,6 @@ jobs:
           ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std" "jdk"
           ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std" "jre"
           ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless" "distroless"
-
-
-
-
-
-
-
-
-
 
   build-and-push:
     needs: [define-matrix, security-and-test]
@@ -175,10 +158,6 @@ jobs:
       matrix:
         java_version: ${{ fromJSON(needs.define-matrix.outputs.versions) }}
 
-    env:
-      DOCKER_REPO_NAME: java
-      GHCR_REPO_NAME: java
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -186,7 +165,6 @@ jobs:
       - name: Setup Environment Variables
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "DOCKER_FULL_IMAGE=index.docker.io/taha2samy/${{ env.DOCKER_REPO_NAME }}" >> $GITHUB_ENV
           echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
         env:
           OWNER: '${{ github.repository_owner }}'
@@ -223,13 +201,7 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: true
-      
-            
-
-      - name: just
-        run: |
-          ls -la
-          tree
+          # Implicitly uses provenance: true (default)
 
       - name: Extract Digests
         id: digests
@@ -239,51 +211,30 @@ jobs:
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
-      # - name: Attest JDK
-      #   if: steps.digests.outputs.jdk != 'null'
-      #   uses: actions/attest-build-provenance@v3
-      #   with:
-      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-      #     subject-digest: ${{ steps.digests.outputs.jdk }}
-      #     push-to-registry: true
-
+      # ==================================
+      # Attestations (Provenance)
+      # ==================================
       - name: Attest JDK (GHCR)
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
-
-      # - name: Attest JRE
-      #   if: steps.digests.outputs.jre != 'null'
-      #   uses: actions/attest-build-provenance@v3
-      #   with:
-      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-      #     subject-digest: ${{ steps.digests.outputs.jre }}
-      #     push-to-registry: true
 
       - name: Attest JRE (GHCR)
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
-
-      # - name: Attest Distroless
-      #   if: steps.digests.outputs.distro != 'null'
-      #   uses: actions/attest-build-provenance@v3
-      #   with:
-      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-      #     subject-digest: ${{ steps.digests.outputs.distro }}
-      #     push-to-registry: true
 
       - name: Attest Distroless (GHCR)
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
 
@@ -294,19 +245,22 @@ jobs:
             set -euo pipefail
 
             verify_img () {
-              local NAME="$1"
-              local DIGEST="$2"
+              local DIGEST="$1"
               if [ "$DIGEST" != "null" ]; then
-                gh attestation verify oci://${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:@$DIGEST --owner ${{ env.OWNER_LC }}
+                # Correct syntax: oci://image@digest
+                gh attestation verify "oci://${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}@$DIGEST" --owner ${{ env.OWNER_LC }}
               fi
             }
 
-            verify_img "JDK" "${{ steps.digests.outputs.jdk }}"
-            verify_img "JRE" "${{ steps.digests.outputs.jre }}"
-            verify_img "Distro" "${{ steps.digests.outputs.distro }}"
-      # =========================
-      # SBOM & Attestation (JDK)
-      # =========================
+            verify_img "${{ steps.digests.outputs.jdk }}"
+            verify_img "${{ steps.digests.outputs.jre }}"
+            verify_img "${{ steps.digests.outputs.distro }}"
+
+      # ==================================
+      # SBOM Generation & Attestation
+      # ==================================
+      
+      # --- JDK ---
       - name: Generate SBOM (JDK)
         if: steps.digests.outputs.jdk != 'null'
         uses: anchore/sbom-action@v0
@@ -324,10 +278,7 @@ jobs:
           sbom-path: sbom-jdk.json
           push-to-registry: true
 
-
-      # =========================
-      # SBOM & Attestation (JRE)
-      # =========================
+      # --- JRE ---
       - name: Generate SBOM (JRE)
         if: steps.digests.outputs.jre != 'null'
         uses: anchore/sbom-action@v0
@@ -345,10 +296,7 @@ jobs:
           sbom-path: sbom-jre.json
           push-to-registry: true
 
-
-      # ==================================
-      # SBOM & Attestation (Distroless)
-      # ==================================
+      # --- Distroless ---
       - name: Generate SBOM (Distroless)
         if: steps.digests.outputs.distro != 'null'
         uses: anchore/sbom-action@v0
@@ -366,31 +314,48 @@ jobs:
           sbom-path: sbom-distro.json
           push-to-registry: true
 
-
   cleanup-ghcr:
     needs: [build-and-push]
     runs-on: ubuntu-latest
     if: always()
     permissions:
       packages: write
+      contents: read
 
     steps:
       - name: Delete Images Older Than 1 Hour
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
           PACKAGE_NAME: java
         run: |
           echo "Starting cleanup for package: $PACKAGE_NAME owned by $OWNER"
 
+          # Determine Owner Type (User or Organization) to select correct API endpoint
+          OWNER_TYPE=$(gh api "/repos/$OWNER/$REPO" --jq '.owner.type')
+          
+          if [ "$OWNER_TYPE" == "Organization" ]; then
+            API_ENDPOINT="/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions"
+          else
+            API_ENDPOINT="/users/$OWNER/packages/container/$PACKAGE_NAME/versions"
+          fi
+          
+          echo "Detected Owner Type: $OWNER_TYPE using endpoint: $API_ENDPOINT"
+
           NOW_TS=$(date +%s)
+          # Cutoff: 1 hour (3600 seconds)
           CUTOFF_TS=$((NOW_TS - 3600))
           echo "Cutoff timestamp: $CUTOFF_TS"
 
-          API_ENDPOINT="/users/$OWNER/packages/container/$PACKAGE_NAME/versions"
-
           echo "Fetching versions..."
-          VERSIONS=$(gh api "$API_ENDPOINT" --paginate --jq '.[] | {id: .id, updated_at: .updated_at, tags: .metadata.container.tags}')
+          # Added error handling || true to prevent job failure if package doesn't exist yet
+          VERSIONS=$(gh api "$API_ENDPOINT" --paginate --jq '.[] | {id: .id, updated_at: .updated_at, tags: .metadata.container.tags}' || echo "")
+
+          if [ -z "$VERSIONS" ]; then
+            echo "No versions found or package does not exist."
+            exit 0
+          fi
 
           echo "$VERSIONS" | jq -c '.' | while read -r item; do
             ID=$(echo "$item" | jq -r '.id')
@@ -404,7 +369,8 @@ jobs:
               echo "🗑️ DELETING: ID=$ID"
               echo "   Time: $UPDATED_AT"
               echo "   Tags: $TAGS"
-
+              
+              # Using -X DELETE to remove the version
               gh api -X DELETE "$API_ENDPOINT/$ID" || echo "⚠️ Failed to delete $ID"
             else
               echo "✅ KEEPING: ID=$ID (Newer than 1 hour)"
