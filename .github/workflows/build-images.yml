@@ -70,7 +70,7 @@ jobs:
       - name: Setup Environment Variables
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER_LC}/java-${{ matrix.java_version }}" >> $GITHUB_ENV
         env:
           OWNER: '${{ github.repository_owner }}'
 
@@ -125,9 +125,9 @@ jobs:
         if: github.event.inputs.security_scan == 'true'
         run: |
           IMAGES=(
-            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std"
-            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std"
-            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless"
+            "${{ env.GHCR_FULL_IMAGE }}:jdk-std"
+            "${{ env.GHCR_FULL_IMAGE }}:jre-std"
+            "${{ env.GHCR_FULL_IMAGE }}:jre-distroless"
           )
 
           for IMG in "${IMAGES[@]}"; do
@@ -138,9 +138,9 @@ jobs:
       - name: Run Functional Tests
         run: |
           chmod +x tests/verify.sh
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std" "jdk"
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std" "jre"
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless" "distroless"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:jdk-std" "jdk"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:jre-std" "jre"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:jre-distroless" "distroless"
 
   build-and-push:
     needs: [define-matrix, security-and-test]
@@ -165,7 +165,7 @@ jobs:
       - name: Setup Environment Variables
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${{ env.OWNER_LC }}/java-${{ matrix.java_version }}" >> $GITHUB_ENV
         env:
           OWNER: '${{ github.repository_owner }}'
 
@@ -218,7 +218,7 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
@@ -226,7 +226,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
@@ -234,7 +234,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
 
@@ -248,7 +248,7 @@ jobs:
               local DIGEST="$1"
               if [ "$DIGEST" != "null" ]; then
                 # Correct syntax: oci://image@digest
-                gh attestation verify "oci://${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}@$DIGEST" --owner ${{ env.OWNER_LC }}
+                gh attestation verify "${{ env.GHCR_FULL_IMAGE }}@$DIGEST" --owner ${{ env.OWNER_LC }}
               fi
             }
 
@@ -265,7 +265,7 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std@${{ steps.digests.outputs.jdk }}
+          image: ${{ env.GHCR_FULL_IMAGE }}:jdk-std@${{ steps.digests.outputs.jdk }}
           format: cyclonedx-json
           output-file: sbom-jdk.json
 
@@ -273,7 +273,7 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           sbom-path: sbom-jdk.json
           push-to-registry: true
@@ -283,7 +283,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std@${{ steps.digests.outputs.jre }}
+          image: ${{ env.GHCR_FULL_IMAGE }}:jre-std@${{ steps.digests.outputs.jre }}
           format: cyclonedx-json
           output-file: sbom-jre.json
 
@@ -291,7 +291,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           sbom-path: sbom-jre.json
           push-to-registry: true
@@ -301,7 +301,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless@${{ steps.digests.outputs.distro }}
+          image: ${{ env.GHCR_FULL_IMAGE }}:jre-distroless@${{ steps.digests.outputs.distro }}
           format: cyclonedx-json
           output-file: sbom-distro.json
 
@@ -309,7 +309,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           sbom-path: sbom-distro.json
           push-to-registry: true
