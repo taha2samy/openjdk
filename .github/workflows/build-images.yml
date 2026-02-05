@@ -310,13 +310,13 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         run: echo "Processing SBOM for JDK image..."
 
-      # - name: Generate SBOM (JDK)
-      #   if: steps.digests.outputs.jdk != 'null'
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std@${{ steps.digests.outputs.jdk }}
-      #     format: cyclonedx-json
-      #     output-file: sbom-jdk.json
+      - name: Generate SBOM (JDK)
+        if: steps.digests.outputs.jdk != 'null'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std@${{ steps.digests.outputs.jdk }}
+          format: cyclonedx-json
+          output-file: sbom-jdk.json
 
       - name: Attest SBOM (JDK) for All Registries
         if: steps.digests.outputs.jdk != 'null'
@@ -331,13 +331,13 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         run: echo "Processing SBOM for JRE image..."
 
-      # - name: Generate SBOM (JRE)
-      #   if: steps.digests.outputs.jre != 'null'
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std@${{ steps.digests.outputs.jre }}
-      #     format: cyclonedx-json
-      #     output-file: sbom-jre.json
+      - name: Generate SBOM (JRE)
+        if: steps.digests.outputs.jre != 'null'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std@${{ steps.digests.outputs.jre }}
+          format: cyclonedx-json
+          output-file: sbom-jre.json
 
       - name: Attest SBOM (JRE) for All Registries
         if: steps.digests.outputs.jre != 'null'
@@ -352,13 +352,13 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         run: echo "Processing SBOM for Distroless image..."
 
-      # - name: Generate SBOM (Distroless)
-      #   if: steps.digests.outputs.distro != 'null'
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless@${{ steps.digests.outputs.distro }}
-      #     format: cyclonedx-json
-      #     output-file: sbom-distro.json
+      - name: Generate SBOM (Distroless)
+        if: steps.digests.outputs.distro != 'null'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless@${{ steps.digests.outputs.distro }}
+          format: cyclonedx-json
+          output-file: sbom-distro.json
 
       - name: Attest SBOM (Distroless) for All Registries
         if: steps.digests.outputs.distro != 'null'
