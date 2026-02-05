@@ -30,6 +30,8 @@ env:
   DOCKER_REPO_NAME: java
   DOCKER_FULL_IMAGE: index.docker.io/taha2samy/java
   GHCR_REPO_NAME: java
+  GHCR_FULL_IMAGE: ghcr.io/taha2samy/java
+
 jobs:
   define-matrix:
     runs-on: ubuntu-latest
@@ -113,6 +115,10 @@ jobs:
           set: |
             *.platform=linux/amd64
             *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
+  
+
+
+
 
       - name: Install Trivy
         if: github.event.inputs.security_scan == 'true'
@@ -123,9 +129,9 @@ jobs:
         if: github.event.inputs.security_scan == 'true'
         run: |
           IMAGES=(
-            "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std"
-            "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std"
-            "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless"
+            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std"
+            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std"
+            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless"
           )
 
           for IMG in "${IMAGES[@]}"; do
@@ -135,9 +141,18 @@ jobs:
       - name: Run Functional Tests
         run: |
           chmod +x tests/verify.sh
-          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std" "jdk"
-          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
-          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std" "jdk"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
+
+
+
+
+
+
+
+
+
 
   build-and-push:
     needs: [define-matrix, security-and-test]
@@ -219,13 +234,13 @@ jobs:
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
-      - name: Attest JDK
-        if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.digests.outputs.jdk }}
-          push-to-registry: true
+      # - name: Attest JDK
+      #   if: steps.digests.outputs.jdk != 'null'
+      #   uses: actions/attest-build-provenance@v3
+      #   with:
+      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+      #     subject-digest: ${{ steps.digests.outputs.jdk }}
+      #     push-to-registry: true
 
       - name: Attest JDK (GHCR)
         if: steps.digests.outputs.jdk != 'null'
@@ -235,13 +250,13 @@ jobs:
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
-      - name: Attest JRE
-        if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.digests.outputs.jre }}
-          push-to-registry: true
+      # - name: Attest JRE
+      #   if: steps.digests.outputs.jre != 'null'
+      #   uses: actions/attest-build-provenance@v3
+      #   with:
+      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+      #     subject-digest: ${{ steps.digests.outputs.jre }}
+      #     push-to-registry: true
 
       - name: Attest JRE (GHCR)
         if: steps.digests.outputs.jre != 'null'
@@ -251,13 +266,13 @@ jobs:
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
-      - name: Attest Distroless
-        if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.digests.outputs.distro }}
-          push-to-registry: true
+      # - name: Attest Distroless
+      #   if: steps.digests.outputs.distro != 'null'
+      #   uses: actions/attest-build-provenance@v3
+      #   with:
+      #     subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+      #     subject-digest: ${{ steps.digests.outputs.distro }}
+      #     push-to-registry: true
 
       - name: Attest Distroless (GHCR)
         if: steps.digests.outputs.distro != 'null'
@@ -290,13 +305,13 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         run: echo "Processing SBOM for JDK image..."
 
-      - name: Generate SBOM (JDK)
-        if: steps.digests.outputs.jdk != 'null'
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std@${{ steps.digests.outputs.jdk }}
-          format: cyclonedx-json
-          output-file: sbom-jdk.json
+      # - name: Generate SBOM (JDK)
+      #   if: steps.digests.outputs.jdk != 'null'
+      #   uses: anchore/sbom-action@v0
+      #   with:
+      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std@${{ steps.digests.outputs.jdk }}
+      #     format: cyclonedx-json
+      #     output-file: sbom-jdk.json
 
       - name: Attest SBOM (JDK) for All Registries
         if: steps.digests.outputs.jdk != 'null'
@@ -311,13 +326,13 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         run: echo "Processing SBOM for JRE image..."
 
-      - name: Generate SBOM (JRE)
-        if: steps.digests.outputs.jre != 'null'
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std@${{ steps.digests.outputs.jre }}
-          format: cyclonedx-json
-          output-file: sbom-jre.json
+      # - name: Generate SBOM (JRE)
+      #   if: steps.digests.outputs.jre != 'null'
+      #   uses: anchore/sbom-action@v0
+      #   with:
+      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std@${{ steps.digests.outputs.jre }}
+      #     format: cyclonedx-json
+      #     output-file: sbom-jre.json
 
       - name: Attest SBOM (JRE) for All Registries
         if: steps.digests.outputs.jre != 'null'
@@ -332,13 +347,13 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         run: echo "Processing SBOM for Distroless image..."
 
-      - name: Generate SBOM (Distroless)
-        if: steps.digests.outputs.distro != 'null'
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless@${{ steps.digests.outputs.distro }}
-          format: cyclonedx-json
-          output-file: sbom-distro.json
+      # - name: Generate SBOM (Distroless)
+      #   if: steps.digests.outputs.distro != 'null'
+      #   uses: anchore/sbom-action@v0
+      #   with:
+      #     image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless@${{ steps.digests.outputs.distro }}
+      #     format: cyclonedx-json
+      #     output-file: sbom-distro.json
 
       - name: Attest SBOM (Distroless) for All Registries
         if: steps.digests.outputs.distro != 'null'
@@ -348,3 +363,47 @@ jobs:
           subject-digest: ${{ steps.digests.outputs.distro }}
           sbom-path: sbom-distro.json
           push-to-registry: true
+
+  cleanup-ghcr:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete Images Older Than 1 Hour
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE_NAME: java
+        run: |
+          echo "Starting cleanup for package: $PACKAGE_NAME owned by $OWNER"
+
+          NOW_TS=$(date +%s)
+          CUTOFF_TS=$((NOW_TS - 3600))
+          echo "Cutoff timestamp: $CUTOFF_TS"
+
+          API_ENDPOINT="/users/$OWNER/packages/container/$PACKAGE_NAME/versions"
+
+          echo "Fetching versions..."
+          VERSIONS=$(gh api "$API_ENDPOINT" --paginate --jq '.[] | {id: .id, updated_at: .updated_at, tags: .metadata.container.tags}')
+
+          echo "$VERSIONS" | jq -c '.' | while read -r item; do
+            ID=$(echo "$item" | jq -r '.id')
+            UPDATED_AT=$(echo "$item" | jq -r '.updated_at')
+            TAGS=$(echo "$item" | jq -r '.tags')
+
+            IMG_TS=$(date -d "$UPDATED_AT" +%s)
+
+            if [ "$IMG_TS" -lt "$CUTOFF_TS" ]; then
+              echo "---------------------------------------------------"
+              echo "🗑️ DELETING: ID=$ID"
+              echo "   Time: $UPDATED_AT"
+              echo "   Tags: $TAGS"
+
+              gh api -X DELETE "$API_ENDPOINT/$ID" || echo "⚠️ Failed to delete $ID"
+            else
+              echo "✅ KEEPING: ID=$ID (Newer than 1 hour)"
+            fi
+          done
