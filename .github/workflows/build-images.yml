@@ -135,11 +135,7 @@ jobs:
           chmod +x tests/verify.sh
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std" "jdk"
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
-          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
-
-
-
-
+          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless
 
 
   build-and-push:
@@ -202,36 +198,33 @@ jobs:
           files: |
             docker-bake.hcl
             versions/${{ matrix.java_version }}/build.hcl
-                  versions.hcl
-                targets: java${{ matrix.java_version }}
-                push: true
-                # تصدير الصور للـ Registry وحفظ ملفات الـ SBOM محلياً في مجلد out
-                set: |
-                  *.output=type=image,push=true
-                  *.output=type=local,dest=./out
+            versions.hcl
+          targets: java${{ matrix.java_version }}
+          push: true
+          set: |
+            *.output=type=image,push=true
+            *.output=type=local,dest=./out
 
-            - name: Save bake metadata
-              run: |
-                echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
+      - name: Save bake metadata
+        run: |
+          echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
 
-            - name: Upload bake metadata artifact
-              uses: actions/upload-artifact@v4
-              with:
-                name: ${{matrix.java_version}}-bake-metadata
-                path: bake-metadata.json
+      - name: Upload bake metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.java_version}}-bake-metadata
+          path: bake-metadata.json
 
-            - name: Extract Metadata
-              id: meta
-              run: |
-                METADATA='${{ steps.bake.outputs.metadata }}'
-                echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
-                echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
-                echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+      - name: Extract Metadata
+        id: meta
+        run: |
+          METADATA='${{ steps.bake.outputs.metadata }}'
+          echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
       - name: Extract SBOM Files
         run: |
-          # نسخ ملفات الـ SBOM التي أنتجها Docker Bake محلياً
-          # المسار يكون: out/{target_name}/sbom.json
           [ -f "out/java${{ matrix.java_version }}-jdk-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jdk-std/sbom.json sbom-jdk.json
           [ -f "out/java${{ matrix.java_version }}-jre-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-std/sbom.json sbom-jre.json
                           [ -f "out/java${{ matrix.java_version }}-jre-distroless/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-distroless/sbom.json sbom-distro.json
