@@ -197,9 +197,6 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: true
-          set: |
-            *.output=type=image,push=true
-            *.output=type=local,dest=./out
 
       - name: just
         run: |
