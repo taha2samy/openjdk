@@ -117,7 +117,7 @@ jobs:
 
       - name: Install Trivy
         if: github.event.inputs.security_scan == 'true'
-        uses: aquasecurity/setup-trivy@v0.2
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
           cache: true
 
