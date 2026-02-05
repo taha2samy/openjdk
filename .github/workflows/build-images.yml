@@ -55,9 +55,6 @@ jobs:
       contents: read
       packages: write
       security-events: write
-      id-token: write
-      attestations: write
-      
 
     strategy:
       fail-fast: false
@@ -135,8 +132,7 @@ jobs:
           chmod +x tests/verify.sh
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std" "jdk"
           ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
-          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless
-
+          ./tests/verify.sh "${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
 
   build-and-push:
     needs: [define-matrix, security-and-test]
@@ -164,7 +160,7 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
-          echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
           echo "DOCKER_FULL_IMAGE=index.docker.io/taha2samy/${{ env.DOCKER_REPO_NAME }}" >> $GITHUB_ENV
           echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
         env:
@@ -205,98 +201,81 @@ jobs:
             *.output=type=image,push=true
             *.output=type=local,dest=./out
 
-      - name: Save bake metadata
+      - name: just
         run: |
-          echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
+          ls -la
+          tree
 
-      - name: Upload bake metadata artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.java_version }}-bake-metadata
-          path: bake-metadata.json
-
-      - name: Extract Metadata
-        id: meta
+      - name: Extract Digests
+        id: digests
         run: |
           METADATA='${{ steps.bake.outputs.metadata }}'
           echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
           echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
-      - name: Extract SBOM Files
+      - name: Attest JDK
+        if: steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      - name: Attest JDK (GHCR)
+        if: steps.digests.outputs.jdk != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      - name: Attest JRE
+        if: steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      - name: Attest JRE (GHCR)
+        if: steps.digests.outputs.jre != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      - name: Attest Distroless
+        if: steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
+      - name: Attest Distroless (GHCR)
+        if: steps.digests.outputs.distro != 'null'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
+      - name: Verify SLSA Provenance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          [ -f "out/java${{ matrix.java_version }}-jdk-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jdk-std/sbom.json sbom-jdk.json
-          [ -f "out/java${{ matrix.java_version }}-jre-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-std/sbom.json sbom-jre.json
-          [ -f "out/java${{ matrix.java_version }}-jre-distroless/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-distroless/sbom.json sbom-distro.json
-          echo "✅ SBOM files extracted from local build outputs"
-          ls -l sbom-*.json
+            set -euo pipefail
 
-      # --- JDK Attestations ---
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.jdk != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jdk }}
-          push-to-registry: true
+            verify_img () {
+              local NAME="$1"
+              local DIGEST="$2"
+              if [ "$DIGEST" != "null" ]; then
+                gh attestation verify oci://${{ env.GHCR_FULL_IMAGE }}@$DIGEST --owner ${{ env.OWNER_LC }}
+              fi
+            }
 
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.jdk != 'null'
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jdk }}
-          push-to-registry: true
-
-      - uses: actions/attest-sbom@v3
-        if: steps.meta.outputs.jdk != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jdk }}
-          sbom-path: 'sbom-jdk.json'
-          push-to-registry: true
-
-      # --- JRE Attestations ---
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.jre != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jre }}
-          push-to-registry: true
-
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.jre != 'null'
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jre }}
-          push-to-registry: true
-
-      - uses: actions/attest-sbom@v3
-        if: steps.meta.outputs.jre != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.jre }}
-          sbom-path: 'sbom-jre.json'
-          push-to-registry: true
-
-      # --- Distroless Attestations ---
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.distro != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.distro }}
-          push-to-registry: true
-
-      - uses: actions/attest-build-provenance@v3
-        if: steps.meta.outputs.distro != 'null'
-        with:
-          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.distro }}
-          push-to-registry: true
-
-      - uses: actions/attest-sbom@v3
-        if: steps.meta.outputs.distro != 'null'
-        with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
-          subject-digest: ${{ steps.meta.outputs.distro }}
-          sbom-path: 'sbom-distro.json'
-          push-to-registry: true
-
+            verify_img "JDK" "${{ steps.digests.outputs.jdk }}"
+            verify_img "JRE" "${{ steps.digests.outputs.jre }}"
+            verify_img "Distro" "${{ steps.digests.outputs.distro }}"
