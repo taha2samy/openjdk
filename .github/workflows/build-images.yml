@@ -134,9 +134,9 @@ jobs:
         if: github.event.inputs.security_scan == 'true'
         run: |
           IMAGES=(
-            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std"
-            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std"
-            "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless"
+            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std"
+            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std"
+            "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless"
           )
 
           for IMG in "${IMAGES[@]}"; do
@@ -146,9 +146,9 @@ jobs:
       - name: Run Functional Tests
         run: |
           chmod +x tests/verify.sh
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std" "jdk"
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std" "jre"
-          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless" "distroless"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std" "jdk"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std" "jre"
+          ./tests/verify.sh "${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless" "distroless"
 
 
 
@@ -251,7 +251,7 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
@@ -267,7 +267,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
@@ -283,7 +283,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
 
@@ -297,77 +297,75 @@ jobs:
               local NAME="$1"
               local DIGEST="$2"
               if [ "$DIGEST" != "null" ]; then
-                gh attestation verify oci://${{ env.GHCR_FULL_IMAGE }}@$DIGEST --owner ${{ env.OWNER_LC }}
+                gh attestation verify oci://${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:@$DIGEST --owner ${{ env.OWNER_LC }}
               fi
             }
 
             verify_img "JDK" "${{ steps.digests.outputs.jdk }}"
             verify_img "JRE" "${{ steps.digests.outputs.jre }}"
             verify_img "Distro" "${{ steps.digests.outputs.distro }}"
-
-
-      - name: --- SBOM & Attestation for JDK Image ---
-        if: steps.digests.outputs.jdk != 'null'
-        run: echo "Processing SBOM for JDK image..."
-
+      # =========================
+      # SBOM & Attestation (JDK)
+      # =========================
       - name: Generate SBOM (JDK)
         if: steps.digests.outputs.jdk != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jdk-std@${{ steps.digests.outputs.jdk }}
+          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std@${{ steps.digests.outputs.jdk }}
           format: cyclonedx-json
           output-file: sbom-jdk.json
 
-      - name: Attest SBOM (JDK) for All Registries
+      - name: Attest SBOM (JDK)
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std
           subject-digest: ${{ steps.digests.outputs.jdk }}
           sbom-path: sbom-jdk.json
           push-to-registry: true
-        
-      - name: --- SBOM & Attestation for JRE Image ---
-        if: steps.digests.outputs.jre != 'null'
-        run: echo "Processing SBOM for JRE image..."
 
+
+      # =========================
+      # SBOM & Attestation (JRE)
+      # =========================
       - name: Generate SBOM (JRE)
         if: steps.digests.outputs.jre != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-std@${{ steps.digests.outputs.jre }}
+          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std@${{ steps.digests.outputs.jre }}
           format: cyclonedx-json
           output-file: sbom-jre.json
 
-      - name: Attest SBOM (JRE) for All Registries
+      - name: Attest SBOM (JRE)
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std
           subject-digest: ${{ steps.digests.outputs.jre }}
           sbom-path: sbom-jre.json
           push-to-registry: true
 
-      - name: --- SBOM & Attestation for Distroless Image ---
-        if: steps.digests.outputs.distro != 'null'
-        run: echo "Processing SBOM for Distroless image..."
 
+      # ==================================
+      # SBOM & Attestation (Distroless)
+      # ==================================
       - name: Generate SBOM (Distroless)
         if: steps.digests.outputs.distro != 'null'
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.GHCR_FULL_IMAGE }}:${{ matrix.java_version }}-jre-distroless@${{ steps.digests.outputs.distro }}
+          image: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless@${{ steps.digests.outputs.distro }}
           format: cyclonedx-json
           output-file: sbom-distro.json
 
-      - name: Attest SBOM (Distroless) for All Registries
+      - name: Attest SBOM (Distroless)
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless
           subject-digest: ${{ steps.digests.outputs.distro }}
           sbom-path: sbom-distro.json
           push-to-registry: true
+
 
   cleanup-ghcr:
     needs: [build-and-push]

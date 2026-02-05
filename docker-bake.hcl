@@ -20,8 +20,8 @@ variable "CACHE_TAG" {
 
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
-  cache-from = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}:${CACHE_TAG}"]
-  cache-to   = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}:${CACHE_TAG},mode=min"]
+  cache-from = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}-${CACHE_TAG}:latest"]
+  cache-to   = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}-${CACHE_TAG}:latest,mode=min"]
   attest = [
     "type=provenance,mode=max",
     "type=sbom,format=cyclonedx-json"
