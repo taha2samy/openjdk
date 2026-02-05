@@ -300,11 +300,9 @@ jobs:
 
       - name: Attest SBOM (JDK) for All Registries
         if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-sbom@v1
+        uses: actions/attest-sbom@v3
         with:
-          subject-name: |
-            ${{ env.DOCKER_FULL_IMAGE }}
-            ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           sbom-path: sbom-jdk.json
           push-to-registry: true
@@ -323,11 +321,9 @@ jobs:
 
       - name: Attest SBOM (JRE) for All Registries
         if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-sbom@v1
+        uses: actions/attest-sbom@v3
         with:
-          subject-name: |
-            ${{ env.DOCKER_FULL_IMAGE }}
-            ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           sbom-path: sbom-jre.json
           push-to-registry: true
@@ -346,11 +342,9 @@ jobs:
 
       - name: Attest SBOM (Distroless) for All Registries
         if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-sbom@v1
+        uses: actions/attest-sbom@v3
         with:
-          subject-name: |
-            ${{ env.DOCKER_FULL_IMAGE }}
-            ${{ env.GHCR_FULL_IMAGE }}
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           sbom-path: sbom-distro.json
           push-to-registry: true
