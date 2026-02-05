@@ -77,6 +77,8 @@ jobs:
 
           echo "OWNER_LC=$OWNER_LC" >> $GITHUB_ENV
           echo "GHCR_FULL_IMAGE=$GHCR_FULL_IMAGE" >> $GITHUB_ENV
+          echo "::notice:: \n  $GITHUB_ENV"
+
         env:
           OWNER: ${{ github.repository_owner }}
 
@@ -171,10 +173,18 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "GHCR_FULL_IMAGE=ghcr.io/${{ env.OWNER_LC }}/java-${{ matrix.java_version }}" >> $GITHUB_ENV
+          OWNER_LC=${OWNER,,}
+          GHCR_FULL_IMAGE="ghcr.io/${OWNER_LC}/java-${{ matrix.java_version }}"
+
+          echo "OWNER_LC=$OWNER_LC"
+          echo "GHCR_FULL_IMAGE=$GHCR_FULL_IMAGE"
+
+          echo "OWNER_LC=$OWNER_LC" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=$GHCR_FULL_IMAGE" >> $GITHUB_ENV
+          echo "::notice:: \n  $GITHUB_ENV"
+
         env:
-          OWNER: '${{ github.repository_owner }}'
+          OWNER: ${{ github.repository_owner }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
