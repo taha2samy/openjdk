@@ -70,7 +70,9 @@ jobs:
       - name: Setup Environment Variables
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
-          echo "GHCR_FULL_IMAGE=ghcr.io/${{ env.OWNER_LC }}/java-${{ matrix.java_version }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/java-${{ matrix.java_version }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/java-${{ matrix.java_version }}" 
+          echo "GHCR_FULL_IMAGE=ghcr.io/${{ github.repository_owner }}/java-${{ matrix.java_version }}" 
         env:
           OWNER: '${{ github.repository_owner }}'
 
