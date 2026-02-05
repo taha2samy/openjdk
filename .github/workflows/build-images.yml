@@ -226,18 +226,26 @@ jobs:
 
       - name: Extract SBOM Files
         run: |
-          if [ "${{ steps.meta.outputs.jdk }}" != "null" ]; then
-            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jdk }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-jdk.json
-          fi
-          
-          if [ "${{ steps.meta.outputs.jre }}" != "null" ]; then
-            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-jre.json
-          fi
-          
-          if [ "${{ steps.meta.outputs.distro }}" != "null" ]; then
-            docker buildx imagetools inspect ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} --format "{{json .SBOM}}" | jq '.predicate' > sbom-distro.json
-          fi
+          extract_sbom() {
+            local image=$1
+            local output=$2
+            echo "Extracting SBOM from $image..."
+            docker buildx imagetools inspect "$image" --format "{{json .SBOM}}" > raw_sbom.json
+            
+            cat raw_sbom.json | jq -r 'if type=="array" then .[0].predicate else .predicate end' > "$output"
+            
+            if grep -q "CycloneDX" "$output"; then
+              echo "✅ Successfully extracted valid CycloneDX SBOM to $output"
+            else
+              echo "❌ Failed to extract valid SBOM format"
+              cat "$output"
+              exit 1
+            fi
+          }
 
+          [ "${{ steps.meta.outputs.jdk }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jdk }} sbom-jdk.json
+          [ "${{ steps.meta.outputs.jre }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} sbom-jre.json
+          [ "${{ steps.meta.outputs.distro }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} sbom-distro.json
       # --- JDK Attestations (GHCR & Docker Hub) ---
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
