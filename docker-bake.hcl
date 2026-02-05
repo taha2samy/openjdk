@@ -24,7 +24,7 @@ target "_common" {
   cache-to   = ["type=registry,ref=${DOCKER_REGISTRY}/${REPO_DOCKER}:${CACHE_TAG},mode=min"]
   attest = [
     "type=provenance,mode=max",
-    "type=sbom"
+    "type=sbom,format=cyclonedx-json"
   ]
 
 }
