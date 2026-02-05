@@ -273,7 +273,7 @@ jobs:
         if: steps.digests.outputs.jdk != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jdk-std
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           sbom-path: sbom-jdk.json
           push-to-registry: true
@@ -291,7 +291,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-std
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           sbom-path: sbom-jre.json
           push-to-registry: true
@@ -309,7 +309,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null'
         uses: actions/attest-sbom@v3
         with:
-          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}:jre-distroless
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}-${{ matrix.java_version }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           sbom-path: sbom-distro.json
           push-to-registry: true
