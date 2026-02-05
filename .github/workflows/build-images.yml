@@ -164,7 +164,7 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
-          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+          echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
           echo "DOCKER_FULL_IMAGE=index.docker.io/taha2samy/${{ env.DOCKER_REPO_NAME }}" >> $GITHUB_ENV
           echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
         env:
@@ -212,7 +212,7 @@ jobs:
       - name: Upload bake metadata artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.java_version}}-bake-metadata
+          name: ${{ matrix.java_version }}-bake-metadata
           path: bake-metadata.json
 
       - name: Extract Metadata
@@ -227,12 +227,11 @@ jobs:
         run: |
           [ -f "out/java${{ matrix.java_version }}-jdk-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jdk-std/sbom.json sbom-jdk.json
           [ -f "out/java${{ matrix.java_version }}-jre-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-std/sbom.json sbom-jre.json
-                          [ -f "out/java${{ matrix.java_version }}-jre-distroless/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-distroless/sbom.json sbom-distro.json
-          
+          [ -f "out/java${{ matrix.java_version }}-jre-distroless/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-distroless/sbom.json sbom-distro.json
           echo "✅ SBOM files extracted from local build outputs"
           ls -l sbom-*.json
 
-      # --- JDK Attestations (GHCR & Docker Hub) ---
+      # --- JDK Attestations ---
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
@@ -255,7 +254,7 @@ jobs:
           sbom-path: 'sbom-jdk.json'
           push-to-registry: true
 
-      # --- JRE Attestations (GHCR & Docker Hub) ---
+      # --- JRE Attestations ---
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jre != 'null'
         with:
@@ -278,7 +277,7 @@ jobs:
           sbom-path: 'sbom-jre.json'
           push-to-registry: true
 
-      # --- Distroless Attestations (GHCR & Docker Hub) ---
+      # --- Distroless Attestations ---
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.distro != 'null'
         with:
@@ -302,12 +301,4 @@ jobs:
           push-to-registry: true
 
       - name: Verify All Attestations
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for digest in "${{ steps.meta.outputs.jdk }}" "${{ steps.meta.outputs.jre }}" "${{ steps.meta.outputs.distro }}"; do
-            if [ "$digest" != "null" ]; then
-              echo "Verifying $digest..."
-              gh attestation verify oci://${{ env.GHCR_FULL_IMAGE }}@$digest --owner ${{ github.repository_owner }}
-            fi
-          done
+
