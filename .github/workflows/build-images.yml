@@ -100,6 +100,7 @@ jobs:
       - name: Build Local for Testing
         uses: docker/bake-action@v6
         with:
+          source: ./
           files: |
             docker-bake.hcl
             versions/${{ matrix.java_version }}/build.hcl
