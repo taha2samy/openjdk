@@ -314,65 +314,65 @@ jobs:
           sbom-path: sbom-distro.json
           push-to-registry: true
 
-  cleanup-ghcr:
-    needs: [build-and-push]
-    runs-on: ubuntu-latest
-    if: always()
-    permissions:
-      packages: write
-      contents: read
+  # cleanup-ghcr:
+  #   needs: [build-and-push]
+  #   runs-on: ubuntu-latest
+  #   if: always()
+  #   permissions:
+  #     packages: write
+  #     contents: read
 
-    steps:
-      - name: Delete Images Older Than 1 Hour
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.repository_owner }}
-          REPO: ${{ github.event.repository.name }}
-          PACKAGE_NAME: java
-        run: |
-          echo "Starting cleanup for package: $PACKAGE_NAME owned by $OWNER"
+  #   steps:
+  #     - name: Delete Images Older Than 1 Hour
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         OWNER: ${{ github.repository_owner }}
+  #         REPO: ${{ github.event.repository.name }}
+  #         PACKAGE_NAME: java
+  #       run: |
+  #         echo "Starting cleanup for package: $PACKAGE_NAME owned by $OWNER"
 
-          # Determine Owner Type (User or Organization) to select correct API endpoint
-          OWNER_TYPE=$(gh api "/repos/$OWNER/$REPO" --jq '.owner.type')
+  #         # Determine Owner Type (User or Organization) to select correct API endpoint
+  #         OWNER_TYPE=$(gh api "/repos/$OWNER/$REPO" --jq '.owner.type')
           
-          if [ "$OWNER_TYPE" == "Organization" ]; then
-            API_ENDPOINT="/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions"
-          else
-            API_ENDPOINT="/users/$OWNER/packages/container/$PACKAGE_NAME/versions"
-          fi
+  #         if [ "$OWNER_TYPE" == "Organization" ]; then
+  #           API_ENDPOINT="/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions"
+  #         else
+  #           API_ENDPOINT="/users/$OWNER/packages/container/$PACKAGE_NAME/versions"
+  #         fi
           
-          echo "Detected Owner Type: $OWNER_TYPE using endpoint: $API_ENDPOINT"
+  #         echo "Detected Owner Type: $OWNER_TYPE using endpoint: $API_ENDPOINT"
 
-          NOW_TS=$(date +%s)
-          # Cutoff: 1 hour (3600 seconds)
-          CUTOFF_TS=$((NOW_TS - 3600))
-          echo "Cutoff timestamp: $CUTOFF_TS"
+  #         NOW_TS=$(date +%s)
+  #         # Cutoff: 1 hour (3600 seconds)
+  #         CUTOFF_TS=$((NOW_TS - 3600))
+  #         echo "Cutoff timestamp: $CUTOFF_TS"
 
-          echo "Fetching versions..."
-          # Added error handling || true to prevent job failure if package doesn't exist yet
-          VERSIONS=$(gh api "$API_ENDPOINT" --paginate --jq '.[] | {id: .id, updated_at: .updated_at, tags: .metadata.container.tags}' || echo "")
+  #         echo "Fetching versions..."
+  #         # Added error handling || true to prevent job failure if package doesn't exist yet
+  #         VERSIONS=$(gh api "$API_ENDPOINT" --paginate --jq '.[] | {id: .id, updated_at: .updated_at, tags: .metadata.container.tags}' || echo "")
 
-          if [ -z "$VERSIONS" ]; then
-            echo "No versions found or package does not exist."
-            exit 0
-          fi
+  #         if [ -z "$VERSIONS" ]; then
+  #           echo "No versions found or package does not exist."
+  #           exit 0
+  #         fi
 
-          echo "$VERSIONS" | jq -c '.' | while read -r item; do
-            ID=$(echo "$item" | jq -r '.id')
-            UPDATED_AT=$(echo "$item" | jq -r '.updated_at')
-            TAGS=$(echo "$item" | jq -r '.tags')
+  #         echo "$VERSIONS" | jq -c '.' | while read -r item; do
+  #           ID=$(echo "$item" | jq -r '.id')
+  #           UPDATED_AT=$(echo "$item" | jq -r '.updated_at')
+  #           TAGS=$(echo "$item" | jq -r '.tags')
 
-            IMG_TS=$(date -d "$UPDATED_AT" +%s)
+  #           IMG_TS=$(date -d "$UPDATED_AT" +%s)
 
-            if [ "$IMG_TS" -lt "$CUTOFF_TS" ]; then
-              echo "---------------------------------------------------"
-              echo "🗑️ DELETING: ID=$ID"
-              echo "   Time: $UPDATED_AT"
-              echo "   Tags: $TAGS"
+  #           if [ "$IMG_TS" -lt "$CUTOFF_TS" ]; then
+  #             echo "---------------------------------------------------"
+  #             echo "🗑️ DELETING: ID=$ID"
+  #             echo "   Time: $UPDATED_AT"
+  #             echo "   Tags: $TAGS"
               
-              # Using -X DELETE to remove the version
-              gh api -X DELETE "$API_ENDPOINT/$ID" || echo "⚠️ Failed to delete $ID"
-            else
-              echo "✅ KEEPING: ID=$ID (Newer than 1 hour)"
-            fi
-          done
+  #             # Using -X DELETE to remove the version
+  #             gh api -X DELETE "$API_ENDPOINT/$ID" || echo "⚠️ Failed to delete $ID"
+  #           else
+  #             echo "✅ KEEPING: ID=$ID (Newer than 1 hour)"
+  #           fi
+  #         done
