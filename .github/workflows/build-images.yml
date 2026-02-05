@@ -300,5 +300,3 @@ jobs:
           sbom-path: 'sbom-distro.json'
           push-to-registry: true
 
-      - name: Verify All Attestations
-
