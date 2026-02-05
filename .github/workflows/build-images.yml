@@ -203,9 +203,7 @@ jobs:
             versions.hcl
           targets: java${{ matrix.java_version }}
           push: true
-          set: |
-            *.output=type=image,push=true
-            *.output=type=local,dest=./out
+      
             
 
       - name: just
@@ -223,7 +221,7 @@ jobs:
 
       - name: Attest JDK
         if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
@@ -231,7 +229,7 @@ jobs:
 
       - name: Attest JDK (GHCR)
         if: steps.digests.outputs.jdk != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
@@ -239,7 +237,7 @@ jobs:
 
       - name: Attest JRE
         if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
@@ -247,7 +245,7 @@ jobs:
 
       - name: Attest JRE (GHCR)
         if: steps.digests.outputs.jre != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
@@ -255,7 +253,7 @@ jobs:
 
       - name: Attest Distroless
         if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
@@ -263,7 +261,7 @@ jobs:
 
       - name: Attest Distroless (GHCR)
         if: steps.digests.outputs.distro != 'null'
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}

@@ -25,6 +25,11 @@ target "_common" {
   attest = [
     "type=provenance,mode=max",
     "type=sbom,format=cyclonedx-json"
+
+  ]
+  output = [
+    "type=image,push=true",
+    "type=local,dest=./out"
   ]
 
 }
