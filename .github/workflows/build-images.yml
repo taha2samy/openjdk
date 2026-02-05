@@ -197,55 +197,48 @@ jobs:
 
       - name: Build and Push (Multi-Arch)
         id: bake
-        uses: docker/bake-action@v5
+        uses: docker/bake-action@v6
         with:
           files: |
             docker-bake.hcl
             versions/${{ matrix.java_version }}/build.hcl
-            versions.hcl
-          targets: java${{ matrix.java_version }}
-          push: true
+                  versions.hcl
+                targets: java${{ matrix.java_version }}
+                push: true
+                # تصدير الصور للـ Registry وحفظ ملفات الـ SBOM محلياً في مجلد out
+                set: |
+                  *.output=type=image,push=true
+                  *.output=type=local,dest=./out
 
-      - name: Save bake metadata
-        run: |
-          echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
+            - name: Save bake metadata
+              run: |
+                echo '${{ steps.bake.outputs.metadata }}' > bake-metadata.json
 
-      - name: Upload bake metadata artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{matrix.java_version}}-bake-metadata
-          path: bake-metadata.json
+            - name: Upload bake metadata artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: ${{matrix.java_version}}-bake-metadata
+                path: bake-metadata.json
 
-      - name: Extract Metadata
-        id: meta
-        run: |
-          METADATA='${{ steps.bake.outputs.metadata }}'
-          echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
-          echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
-          echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+            - name: Extract Metadata
+              id: meta
+              run: |
+                METADATA='${{ steps.bake.outputs.metadata }}'
+                echo "jdk=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+                echo "jre=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-std"["containerimage.digest"]')" >> $GITHUB_OUTPUT
+                echo "distro=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre-distroless"["containerimage.digest"]')" >> $GITHUB_OUTPUT
 
       - name: Extract SBOM Files
         run: |
-          extract_sbom() {
-            local image=$1
-            local output=$2
-            echo "Extracting SBOM from $image..."
-            docker buildx imagetools inspect "$image" --format "{{json .SBOM}}" > raw_sbom.json
-            
-            cat raw_sbom.json | jq -r 'if type=="array" then .[0].predicate else .predicate end' > "$output"
-            
-            if grep -q "CycloneDX" "$output"; then
-              echo "✅ Successfully extracted valid CycloneDX SBOM to $output"
-            else
-              echo "❌ Failed to extract valid SBOM format"
-              cat "$output"
-              exit 1
-            fi
-          }
+          # نسخ ملفات الـ SBOM التي أنتجها Docker Bake محلياً
+          # المسار يكون: out/{target_name}/sbom.json
+          [ -f "out/java${{ matrix.java_version }}-jdk-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jdk-std/sbom.json sbom-jdk.json
+          [ -f "out/java${{ matrix.java_version }}-jre-std/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-std/sbom.json sbom-jre.json
+                          [ -f "out/java${{ matrix.java_version }}-jre-distroless/sbom.json" ] && cp out/java${{ matrix.java_version }}-jre-distroless/sbom.json sbom-distro.json
+          
+          echo "✅ SBOM files extracted from local build outputs"
+          ls -l sbom-*.json
 
-          [ "${{ steps.meta.outputs.jdk }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jdk }} sbom-jdk.json
-          [ "${{ steps.meta.outputs.jre }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.jre }} sbom-jre.json
-          [ "${{ steps.meta.outputs.distro }}" != "null" ] && extract_sbom ${{ env.GHCR_FULL_IMAGE }}@${{ steps.meta.outputs.distro }} sbom-distro.json
       # --- JDK Attestations (GHCR & Docker Hub) ---
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
@@ -253,12 +246,14 @@ jobs:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jdk }}
           push-to-registry: true
+
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jdk }}
           push-to-registry: true
+
       - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.jdk != 'null'
         with:
@@ -274,12 +269,14 @@ jobs:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jre }}
           push-to-registry: true
+
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.jre != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.jre }}
           push-to-registry: true
+
       - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.jre != 'null'
         with:
@@ -295,12 +292,14 @@ jobs:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.distro }}
           push-to-registry: true
+
       - uses: actions/attest-build-provenance@v3
         if: steps.meta.outputs.distro != 'null'
         with:
           subject-name: ${{ env.DOCKER_FULL_IMAGE }}
           subject-digest: ${{ steps.meta.outputs.distro }}
           push-to-registry: true
+
       - uses: actions/attest-sbom@v3
         if: steps.meta.outputs.distro != 'null'
         with:
@@ -308,7 +307,6 @@ jobs:
           subject-digest: ${{ steps.meta.outputs.distro }}
           sbom-path: 'sbom-distro.json'
           push-to-registry: true
-
 
       - name: Verify All Attestations
         env:
