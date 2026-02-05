@@ -284,3 +284,108 @@ jobs:
             verify_img "JDK" "${{ steps.digests.outputs.jdk }}"
             verify_img "JRE" "${{ steps.digests.outputs.jre }}"
             verify_img "Distro" "${{ steps.digests.outputs.distro }}"
+
+      - name: Prepare Matrix for Attestation Job
+        id: prepare-matrix
+        run: |
+          METADATA='${{ steps.bake.outputs.metadata }}'
+          IMAGES_JSON="[]"
+
+          add_image() {
+            local variant="$1"
+            local target_name="java${{ matrix.java_version }}-$variant"
+            local digest=$(echo "$METADATA" | jq -r ".\"$target_name\"[\"containerimage.digest\"]")
+            
+            if [ "$digest" != "null" ]; then
+              local entry=$(jq -n \
+                --arg version "${{ matrix.java_version }}" \
+                --arg variant "$variant" \
+                --arg digest "$digest" \
+                '{version: $version, variant: $variant, digest: $digest}')
+              IMAGES_JSON=$(echo "$IMAGES_JSON" | jq ". + [$entry]")
+            fi
+          }
+          add_image "jdk-std"
+          add_image "jre-std"
+          add_image "jre-distroless"
+          echo "images=$(echo $IMAGES_JSON | jq -c .)" >> $GITHUB_OUTPUT
+
+
+
+  test-images:
+    needs: build-and-push
+    if: needs.build-and-push.outputs.images != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      packages: write
+      contents: read
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.build-and-push.outputs.images) }}
+
+    env:
+      DOCKER_REPO_NAME: java
+      GHCR_REPO_NAME: java
+
+    steps:
+      - name: Setup Environment Variables
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+          echo "DOCKER_FULL_IMAGE=index.docker.io/taha2samy/${{ env.DOCKER_REPO_NAME }}" >> $GITHUB_ENV
+          echo "GHCR_FULL_IMAGE=ghcr.io/${OWNER,,}/${{ env.GHCR_REPO_NAME }}" >> $GITHUB_ENV
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.OWNER_LC }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.DOCKER_FULL_IMAGE }}:${{ matrix.image.version }}-${{ matrix.image.variant }}@${{ matrix.image.digest }}
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+
+      - name: Attest Provenance (Docker Hub)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+          subject-digest: ${{ matrix.image.digest }}
+          push-to-registry: true
+
+      - name: Attest Provenance (GHCR)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ matrix.image.digest }}
+          push-to-registry: true
+
+      - name: Attest SBOM (Docker Hub)
+        uses: actions/attest-sbom@v1
+        with:
+          subject-name: ${{ env.DOCKER_FULL_IMAGE }}
+          subject-digest: ${{ matrix.image.digest }}
+          sbom-path: sbom.cyclonedx.json
+          push-to-registry: true
+
+      - name: Attest SBOM (GHCR)
+        uses: actions/attest-sbom@v1
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ matrix.image.digest }}
+          sbom-path: sbom.cyclonedx.json
+          push-to-registry: true
