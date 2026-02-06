@@ -87,7 +87,6 @@ def fetch_java_metadata(major_version, arch, image_type):
             "RELEASE_LINK": item.get('release_link'),
             "RELEASE_NAME": item.get('release_name'),
             "VENDOR": item.get('vendor'),
-            "WORKFLOW_RUN_ID": os.getenv("GITHUB_RUN_ID", "none"),
             "WORKFLOW_NAME": os.getenv("GITHUB_WORKFLOW", "none")
         }
     except:
