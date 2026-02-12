@@ -1,7 +1,7 @@
 variable "CACHE_TAG" {
 default = "cache-8"
 }
- 
+  
 variable "JAVA8_JRE_AMD64_URL" {}
 variable "JAVA8_JRE_AMD64_SHA" {}
 variable "JAVA8_JRE_ARM64_URL" {}
