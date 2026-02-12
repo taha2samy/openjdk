@@ -1,0 +1,38 @@
+version: '3'
+
+vars:
+  CP: "/opt/java/jre/lib/ext/*"
+  HOST_TEST_DIR: "{{.USER_WORKING_DIR}}/versions/8/test"
+
+tasks:
+  run-suite:
+    cmds:
+      - task: compile
+      - task: run-tests
+      - task: cleanup
+
+  compile:
+    internal: true
+    cmds:
+      - |
+        docker run --rm -v "{{.HOST_TEST_DIR}}:/test_mount" {{.IMAGE}} \
+        /opt/java/bin/javac -cp "{{.CP}}" \
+        /test_mount/EnforcementTest.java \
+        /test_mount/CryptoOpsTest.java \
+        /test_mount/KeystoreRandomTest.java \
+        /test_mount/FipsTest.java
+
+  run-tests:
+    internal: true
+    cmds:
+      - for: [EnforcementTest, CryptoOpsTest, KeystoreRandomTest, FipsTest]
+        cmd: |
+          echo ">>> Running {{.ITEM}}..."
+          docker run --rm -v "{{.HOST_TEST_DIR}}:/test_mount" {{.IMAGE}} \
+          /opt/java/bin/java -Dorg.bouncycastle.fips.approved_only=true \
+          -cp "{{.CP}}:/test_mount" {{.ITEM}}
+
+  cleanup:
+    internal: true
+    cmds:
+      - rm -f {{.HOST_TEST_DIR}}/*.class

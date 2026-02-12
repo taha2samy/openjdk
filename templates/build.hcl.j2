@@ -1,0 +1,73 @@
+variable "CACHE_TAG" {
+default = "cache-{{ version }}"
+}
+
+variable "JAVA{{ version }}_JRE_AMD64_URL" {}
+variable "JAVA{{ version }}_JRE_AMD64_SHA" {}
+variable "JAVA{{ version }}_JRE_ARM64_URL" {}
+variable "JAVA{{ version }}_JRE_ARM64_SHA" {}
+variable "JAVA{{ version }}_JDK_AMD64_URL" {}
+variable "JAVA{{ version }}_JDK_AMD64_SHA" {}
+variable "JAVA{{ version }}_JDK_ARM64_URL" {}
+variable "JAVA{{ version }}_JDK_ARM64_SHA" {}
+variable "JAVA{{ version }}_FULL_VER" {}
+variable "JAVA{{ version }}_SEC_LEVEL" {}
+variable "JAVA{{ version }}_SEMVER" {}
+variable "JAVA{{ version }}_SCM_REF" {}
+variable "JAVA{{ version }}_UPSTREAM_UPDATE" {}
+
+target "_java{{ version }}-common" {
+inherits = ["_common"]
+args = {
+JAVA_VER = "{{ version }}"
+JAVA_FULL_VERSION = JAVA{{ version }}_FULL_VER
+JAVA_SECURITY_LEVEL = JAVA{{ version }}_SEC_LEVEL
+JAVA_SEMVER = JAVA{{ version }}_SEMVER
+JAVA_SCM_REF = JAVA{{ version }}_SCM_REF
+JAVA_UPSTREAM_UPDATE = JAVA{{ version }}_UPSTREAM_UPDATE
+WOLFI_BASE_DIGEST = WOLFI_BASE_DIGEST
+WOLFI_STATIC_DIGEST = WOLFI_STATIC_DIGEST
+}
+}
+
+target "java{{ version }}-jre-std" {
+inherits = ["_java{{ version }}-common"]
+context = "./versions/{{ version }}"
+target = "jre-standard"
+args = {
+BUILD_TYPE = "jre"
+JAVA_URL_AMD64 = JAVA{{ version }}_JRE_AMD64_URL
+JAVA_SHA_AMD64 = JAVA{{ version }}_JRE_AMD64_SHA
+JAVA_URL_AARCH64 = JAVA{{ version }}_JRE_ARM64_URL
+JAVA_SHA_AARCH64 = JAVA{{ version }}_JRE_ARM64_SHA
+}
+tags = ["${GHCR_REGISTRY}/${REPO_GHCR}-{{ version }}:jre-std"]
+}
+
+target "java{{ version }}-jdk-std" {
+inherits = ["_java{{ version }}-common"]
+context = "./versions/{{ version }}"
+target = "jdk-standard"
+args = {
+BUILD_TYPE = "jdk"
+JAVA_URL_AMD64 = JAVA{{ version }}_JDK_AMD64_URL
+JAVA_SHA_AMD64 = JAVA{{ version }}_JDK_AMD64_SHA
+JAVA_URL_AARCH64 = JAVA{{ version }}_JDK_ARM64_URL
+JAVA_SHA_AARCH64 = JAVA{{ version }}_JDK_ARM64_SHA
+}
+tags = ["${GHCR_REGISTRY}/${REPO_GHCR}-{{ version }}:jdk-std"]
+}
+
+target "java{{ version }}-jre-distroless" {
+inherits = ["_java{{ version }}-common"]
+context = "./versions/{{ version }}"
+target = "jre-distroless"
+args = {
+BUILD_TYPE = "jre"
+JAVA_URL_AMD64 = JAVA{{ version }}_JRE_AMD64_URL
+JAVA_SHA_AMD64 = JAVA{{ version }}_JRE_AMD64_SHA
+JAVA_URL_AARCH64 = JAVA{{ version }}_JRE_ARM64_URL
+JAVA_SHA_AARCH64 = JAVA{{ version }}_JRE_ARM64_SHA
+}
+tags = [ "${GHCR_REGISTRY}/${REPO_GHCR}-{{ version }}:jre-distroless"]
+}

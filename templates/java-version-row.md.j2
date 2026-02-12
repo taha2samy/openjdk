@@ -1,0 +1,69 @@
+### ☕ Java {{full_version}} (LTS) 
+
+[![Docker Pulls]({{docker_pulls}})]({{docker_pulls_url}})
+![Vulnerability Scan]({{vulnerability_scan_badge}})
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
+
+| 📋 Build Metadata | Information                                                  |
+| :--------------- | :----------------------------------------------------------- |
+| **Full Version** | `{{full_version}}`                                           |
+| **Build Date**   | `{{build_date}}`                                             |
+| **Upstream Date**| `{{upstream_date}}`                                          |
+| **Base Image**   | `wolfi-base` (Chainguard)                                    |
+| **Build Proof**  | [🔗 Provenance & Logs]({{build_proof}})                      |
+| **Security**     | [🔍 Download SBOM (Syft)]({{sbom}})                          |
+
+| 📦 Image Variant    | 🏷️ Tag               | 🏗️ Architecture / 💾 Size                          | 🔐 Artifacts                                        |
+| :----------------- | :------------------ | :----------------------------------------------- | :----------------------------------------------------------- |
+| **JDK Standard**   | `{{Version}}-jdk-std`        | 🟢 **amd64**: `{{amd64_jdk_size}}`<br>🔵 **arm64**: `{{arm64_jdk_size}}` | [📦 SBOM]({{jdk_sbom_url}}) • [🔒 Provenance]({{jdk_provenance_url}}) • [✍️ Attestation]({{jdk_attestation_url}}) |
+| **JRE Standard**   | `{{Version}}-jre-std`        | 🟢 **amd64**: `{{amd64_jre_size}}`<br>🔵 **arm64**: `{{arm64_jre_size}}`   | [📦 SBOM]({{jre_sbom_url}}) • [🔒 Provenance]({{jre_provenance_url}}) • [✍️ Attestation]({{jre_attestation_url}}) |
+| **JRE Distroless** | `{{Version}}-jre-distroless` | 🟢 **amd64**: `{{amd64_distroless_size}}`<br>🔵 **arm64**: `{{arm64_distroless_size}}`   | [📦 SBOM]({{dist_sbom_url}}) • [🔒 Provenance]({{dist_provenance_url}}) • [✍️ Attestation]({{dist_attestation_url}}) |
+
+---
+
+#### 🏗️ Direct Image PULL (Pinned by Architecture SHA)
+
+**JDK Standard:**
+```text
+Multi-arch digest: {{amd64_jdk_digest}}
+```
+- 🟢 `amd64`: {{amd64_jdk_full_sha}}
+- 🔵 `arm64`: {{arm64_jdk_full_sha}}
+
+**JRE Standard:**
+```text
+Multi-arch digest: {{amd64_jre_digest}}
+```
+- 🟢 `amd64`: {{amd64_jre_full_sha}}
+- 🔵 `arm64`: {{arm64_jre_full_sha}}
+
+**JRE Distroless:**
+```text
+Multi-arch digest: {{amd64_distroless_digest}}
+```
+- 🟢 `amd64`: {{amd64_dist_full_sha}}
+- 🔵 `arm64`: {{arm64_dist_full_sha}}
+
+---
+
+#### 🔐 Security & Supply Chain
+
+All images include:
+- **SBOM** (Software Bill of Materials) - Complete dependency inventory
+- **SLSA Provenance** - Build process attestation (Level 3)
+- **In-toto Attestation** - Cryptographically signed metadata
+- **Vulnerability Scanning** - Regular security checks via Trivy/Grype
+
+To verify attestations:
+```bash
+# Verify SBOM
+cosign verify-attestation --type spdx {{amd64_jdk_full_sha}}
+
+# Verify provenance
+cosign verify-attestation --type slsaprovenance {{amd64_jdk_full_sha}}
+
+# Download SBOM
+cosign download attestation {{amd64_jdk_full_sha}} | jq -r '.payload' | base64 -d | jq
+```
+
+---
