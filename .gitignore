@@ -15,5 +15,5 @@ templates/java-version-row.md.j2
 !versions/25/java.security
 !versions/8/migrate.js
 !versions/11/migrate.js
-
+versions/*/Dockerfile
 *.json
