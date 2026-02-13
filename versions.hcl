@@ -1,4 +1,3 @@
-WOLFI_BASE_DIGEST = "sha256:1c56f3ceb1c9929611a1cc7ab7a5fde1ec5df87add282029cd1596b8eae5af67"
 WOLFI_STATIC_DIGEST = "sha256:9cef3c6a78264cb7e25923bf1bf7f39476dccbcc993af9f4ffeb191b77a7951e"
 JAVA8_JDK_AMD64_URL = "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u482-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u482b08.tar.gz"
 JAVA8_JDK_AMD64_SHA = "e74becad56b4cc01f1556a671e578d3788789f5257f9499f6fbed84e63a55ecf"
