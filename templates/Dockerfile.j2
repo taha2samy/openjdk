@@ -42,31 +42,18 @@ RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
     curl -fLso /tmp/bctls-fips.jar "$BCTLS_FIPS_URL" && \
     curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
-RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
-    curl -fLso /tmp/bcutil-fips.jar "$BCUTIL_FIPS_URL" && \
-    curl -fLso /tmp/bctls-fips.jar "$BCTLS_FIPS_URL" && \
-    curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
-
-
-RUN echo "hallo world" > 1.txt
-RUN echo ">>>hi hihi  DEBUGGING PATHS <<<" && \
-    find /opt/java-slim -name "cacerts" && \
-    find /opt/java-slim -name "java.security" && \
-    ls -d /opt/java-slim/jre/lib/ext || echo "No ext dir"
-
 RUN set -e; \
-    CACERTS_PATH=$(find /opt/java-slim -name cacerts -type f | head -n 1); \
-    echo "Found cacerts at: $CACERTS_PATH"; \
-    SEC_FILE=$(find /opt/java-slim -name java.security -type f | head -n 1); \
-    echo "Found java.security at: $SEC_FILE"; \
-    if [ -d "/opt/java-slim/jre/lib/ext" ]; then \
-    J_LIB_DIR="/opt/java-slim/jre/lib/ext"; \
-    elif [ -d "/opt/java-slim/lib/ext" ]; then \
-    J_LIB_DIR="/opt/java-slim/lib/ext"; \
-    else \
-    J_LIB_DIR="/opt/java-slim/lib"; \
-    fi; \
-    echo "Destination for JARs: $J_LIB_DIR"; \
+    {% if version == '8' %}
+CACERTS_PATH="/opt/java-slim/jre/lib/security/cacerts" && \
+    SEC_FILE="/opt/java-slim/jre/lib/security/java.security" && \
+    J_LIB_DIR="/opt/java-slim/jre/lib/ext" && \
+    {% else %}
+CACERTS_PATH="/opt/java-slim/lib/security/cacerts" && \
+    SEC_FILE="/opt/java-slim/conf/security/java.security" && \
+    J_LIB_DIR="/opt/java-slim/lib" && \
+    {% endif %}
+echo ">>> Target Config: $SEC_FILE" && \
+    echo ">>> Target Certs: $CACERTS_PATH" && \
     /opt/java-slim/bin/keytool -importkeystore \
     -srckeystore "$CACERTS_PATH" \
     -srcstorepass changeit \
@@ -74,12 +61,13 @@ RUN set -e; \
     -deststoretype BCFKS \
     -deststorepass changeit \
     -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
-    -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider; \
-    mv /tmp/cacerts.bcfks "$CACERTS_PATH"; \
-    mkdir -p "$J_LIB_DIR"; \
-    cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$J_LIB_DIR/"; \
-    cp /tmp/java.security "$SEC_FILE"; \
-    rm -rf /tmp/*.jar /tmp/java.security
+    -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+    && \
+    mv /tmp/cacerts.bcfks "$CACERTS_PATH" && \
+    mkdir -p "$J_LIB_DIR" && \
+    cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$J_LIB_DIR/" && \
+    cp /tmp/java.security "$SEC_FILE" && \
+    rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
 FROM cgr.dev/chainguard/wolfi-base AS helper
 RUN apk add --no-cache libstdc++ zlib tzdata posix-libc-utils ca-certificates
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
