@@ -49,6 +49,7 @@ def main():
 
         print(f"Generating files for Java {version_str}...")
 
+        # 1. Render Dockerfile
         try:
             docker_tpl = env.get_template("Dockerfile.j2")
             with open(os.path.join(output_path, "Dockerfile"), "w") as f:
@@ -56,12 +57,22 @@ def main():
         except Exception as e:
             print(f"Error rendering Dockerfile for {version_str}: {e}")
 
+        # 2. Render build.hcl
         try:
             build_tpl = env.get_template("build.hcl.j2")
             with open(os.path.join(output_path, "build.hcl"), "w") as f:
                 f.write(build_tpl.render(context))
         except Exception as e:
             print(f"Error rendering build.hcl for {version_str}: {e}")
+
+        # 3. Render java.security (The new part)
+        try:
+            java_sec_tpl = env.get_template("java.security.j2")
+            with open(os.path.join(output_path, "java.security"), "w") as f:
+                f.write(java_sec_tpl.render(context))
+            print(f"Successfully generated java.security for {version_str}")
+        except Exception as e:
+            print(f"Error rendering java.security for {version_str}: {e}")
 
 if __name__ == "__main__":
     main()

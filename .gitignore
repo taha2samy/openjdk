@@ -17,3 +17,6 @@ templates/java-version-row.md.j2
 !versions/11/migrate.js
 versions/*/Dockerfile
 *.json
+versions/*/java.security
+versions/*/build.hcl
+versions/*/Dockerfile
