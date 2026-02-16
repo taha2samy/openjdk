@@ -43,21 +43,28 @@ RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
     curl -fLso /tmp/bctls-fips.jar "$BCTLS_FIPS_URL" && \
     curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
-RUN CACERTS_PATH=$(find / -name cacerts | head -n 1) && \
-    ORIG_SEC_FILE=$(find /opt -name java.security | head -n 1) && \
-    echo "$CACERTS_PATH" && \
-    echo "$ORIG_SEC_FILE" && \
+RUN \
     {% if version == '8' %}
-J_LIB_DIR=$(find /opt/java-slim -name ext -type d | head -n 1) && \
+CACERTS_PATH="/opt/java-slim/jre/lib/security/cacerts" && \
+    J_LIB_DIR="/opt/java-slim/jre/lib/ext" && \
     {% else %}
-J_LIB_DIR="/opt/java-slim/lib" && \
+CACERTS_PATH="/opt/java-slim/lib/security/cacerts" && \
+    J_LIB_DIR="/opt/java-slim/lib" && \
     {% endif %}
-mkdir -p "$J_LIB_DIR" && \
-    env JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/./urandom" /opt/java-slim/bin/jjs -scripting -cp /tmp/bc-fips.jar /tmp/migrate.js && \
+ORIG_SEC_FILE="$(dirname "$CACERTS_PATH")/java.security" && \
+    /opt/java-slim/bin/keytool -importkeystore \
+    -srckeystore "$CACERTS_PATH" \
+    -srcstorepass changeit \
+    -destkeystore /tmp/cacerts.bcfks \
+    -deststoretype BCFKS \
+    -deststorepass changeit \
+    -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
+    -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider \
+    && \
     mv /tmp/cacerts.bcfks "$CACERTS_PATH" && \
-    cp /tmp/*.jar "$J_LIB_DIR/" && \
+    mkdir -p "$J_LIB_DIR" && \
+    cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$J_LIB_DIR/" && \
     cp /tmp/java.security "$ORIG_SEC_FILE"
-
 
 FROM cgr.dev/chainguard/wolfi-base AS helper
 RUN apk add --no-cache libstdc++ zlib tzdata posix-libc-utils ca-certificates

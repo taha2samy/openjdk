@@ -1,24 +1,7 @@
 version: "3"
-vars:
-  IMAGE: '{{.IMAGE | default "ghcr.io/taha2samy/java-8:jdk-std"}}'
 
-includes:
-  j8:
-    taskfile: ./versions/8/Taskfile.yml
-    dir: ./versions/8
+
 tasks:
-  test-fips:
-    desc: Run all FIPS compliance tests for Java 8
-    cmds:
-      - task: j8:run-suite
-        vars: { IMAGE: "{{.IMAGE}}" }
-
-  test-fips:
-    desc: Run all FIPS compliance tests for Java 8
-    cmds:
-      - task: j8:run-suite
-        vars: { IMAGE: "{{.IMAGE}}" }
-
   update-java:
     cmds:
       - python .github/scripts/update_java.py
