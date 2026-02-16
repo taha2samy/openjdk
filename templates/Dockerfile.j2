@@ -48,7 +48,7 @@ RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
     curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
 
-RUN echo "hallo world"
+RUN echo "hallo world" > 1.txt
 RUN echo ">>>hi hihi  DEBUGGING PATHS <<<" && \
     find /opt/java-slim -name "cacerts" && \
     find /opt/java-slim -name "java.security" && \
