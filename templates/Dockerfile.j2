@@ -43,21 +43,22 @@ RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
     curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
 RUN set -e; \
-    if [ -f "/opt/java-slim/jre/lib/security/cacerts" ]; then \
+    {% if version == '8' %}
+if [ -d "/opt/java-slim/jre" ]; then \
     CACERTS_PATH="/opt/java-slim/jre/lib/security/cacerts"; \
     SEC_FILE="/opt/java-slim/jre/lib/security/java.security"; \
     J_LIB_DIR="/opt/java-slim/jre/lib/ext"; \
     else \
     CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
-    {% if version == '8' %}
-SEC_FILE="/opt/java-slim/lib/security/java.security"; \
+    SEC_FILE="/opt/java-slim/lib/security/java.security"; \
     J_LIB_DIR="/opt/java-slim/lib/ext"; \
+    fi; \
     {% else %}
-SEC_FILE="/opt/java-slim/conf/security/java.security"; \
+CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
+    SEC_FILE="/opt/java-slim/conf/security/java.security"; \
     J_LIB_DIR="/opt/java-slim/lib"; \
     {% endif %}
-fi; \
-    /opt/java-slim/bin/keytool -importkeystore \
+/opt/java-slim/bin/keytool -importkeystore \
     -srckeystore "$CACERTS_PATH" \
     -srcstorepass changeit \
     -destkeystore /tmp/cacerts.bcfks \
@@ -69,7 +70,12 @@ fi; \
     mkdir -p "$J_LIB_DIR" && \
     cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$J_LIB_DIR/" && \
     cp /tmp/java.security "$SEC_FILE" && \
-    rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pemFROM cgr.dev/chainguard/wolfi-base AS helper
+    rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
+
+
+
+
+FROM cgr.dev/chainguard/wolfi-base AS helper
 RUN apk add --no-cache libstdc++ zlib tzdata posix-libc-utils ca-certificates
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
 RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/lib/libz.so
