@@ -47,7 +47,12 @@ RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
     curl -fLso /tmp/bcutil-fips.jar "$BCUTIL_FIPS_URL" && \
     curl -fLso /tmp/bctls-fips.jar "$BCTLS_FIPS_URL" && \
     curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
-RUN tree
+
+RUN echo ">>> DEBUGGING PATHS <<<" && \
+    find /opt/java-slim -name "cacerts" && \
+    find /opt/java-slim -name "java.security" && \
+    ls -d /opt/java-slim/jre/lib/ext || echo "No ext dir"
+
 RUN set -e; \
     CACERTS_PATH=$(find /opt/java-slim -name cacerts -type f | head -n 1); \
     echo "Found cacerts at: $CACERTS_PATH"; \
