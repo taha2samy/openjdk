@@ -1,0 +1,64 @@
+# -----------------------------------------------------------------------------
+# FIPS 140-3 STRICT CONFIGURATION - JAVA 11
+# -----------------------------------------------------------------------------
+
+# 1. Main Crypto Provider (FIPS Approved DRBG & Algorithms)
+security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider C:HYBRID;ENABLE{ALL};
+
+# 2. FIPS JSSE Provider (For Secure SSL/TLS Connections)
+security.provider.2=org.bouncycastle.jsse.provider.BouncyCastleJsseProvider fips:BCFIPS
+
+# 3. Base Sun Provider (Kept for basic utilities only)
+security.provider.3=sun.security.provider.Sun
+
+# 4. Standard Providers (Pushed to low priority)
+security.provider.4=sun.security.rsa.SunRsaSign
+security.provider.5=sun.security.ec.SunEC
+security.provider.6=com.sun.crypto.provider.SunJCE
+
+# Secure Random - Pointed to FIPS Approved DRBG
+securerandom.source=file:/dev/random
+securerandom.strongAlgorithms=DEFAULT:BCFIPS
+
+# KeyStore Defaults - BCFKS is mandatory for FIPS
+keystore.type=BCFKS
+keystore.type.compat=false
+
+# -----------------------------------------------------------------------------
+# ALGORITHM RESTRICTIONS (STRICT)
+# -----------------------------------------------------------------------------
+
+# CertPath - Blocking MD2/MD5. 
+# SHA1 is allowed ONLY for Root/Anchor Verification via JAVA_TOOL_OPTIONS
+jdk.certpath.disabledAlgorithms=MD2, MD5
+
+# TLS - Strict Blocking of non-FIPS protocols and weak ciphers
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, 3DES_EDE_CBC, MD5, NULL, anon, ECDH, \
+    DH keySize < 2048, RSA keySize < 2048
+
+# Legacy - Blocked
+jdk.security.legacyAlgorithms=MD2, MD5, SHA1, RSA keySize < 2048, DSA keySize < 2048
+
+# -----------------------------------------------------------------------------
+# NETWORK & SOCKET FACTORY OVERRIDES (FORCING BOUNCY CASTLE)
+# -----------------------------------------------------------------------------
+ssl.SocketFactory.provider=org.bouncycastle.jsse.provider.SSLSocketFactoryImpl
+ssl.ServerSocketFactory.provider=org.bouncycastle.jsse.provider.SSLServerSocketFactoryImpl
+ssl.KeyManagerFactory.algorithm=PKIX
+ssl.TrustManagerFactory.algorithm=PKIX
+
+# Force Bouncy Castle for Certificate Path Validation
+certpathvalidator.type=PKIX
+certpath.validator.provider=BCFIPS
+
+# -----------------------------------------------------------------------------
+# STANDARD SYSTEM DEFAULTS
+# -----------------------------------------------------------------------------
+policy.url.1=file:${java.home}/conf/security/java.policy
+policy.url.2=file:${user.home}/.java.policy
+security.overridePropertiesFile=true
+networkaddress.cache.negative.ttl=10
+jceks.key.serialFilter = java.lang.Enum;java.security.KeyRep;java.security.KeyRep$Type;javax.crypto.spec.SecretKeySpec;!*
+
+# Package Restrictions
+package.access=sun.,com.sun.xml.internal.,com.sun.imageio.,com.sun.istack.internal.,com.sun.jmx.,com.sun.media.sound.,com.sun.naming.internal.,com.sun.proxy.,com.sun.corba.se.,com.sun.org.apache.bcel.internal.,com.sun.org.apache.regexp.internal.,com.sun.org.apache.xerces.internal.,com.sun.org.apache.xpath.internal.,com.sun.org.apache.xalan.internal.extensions.,com.sun.org.apache.xalan.internal.lib.,com.sun.org.apache.xalan.internal.res.,com.sun.org.apache.xalan.internal.templates.,com.sun.org.apache.xalan.internal.utils.,com.sun.org.apache.xalan.internal.xslt.,com.sun.org.apache.xalan.internal.xsltc.cmdline.,com.sun.org.apache.xalan.internal.xsltc.compiler.,com.sun.org.apache.xalan.internal.xsltc.trax.,com.sun.org.apache.xalan.internal.xsltc.util.,com.sun.org.apache.xml.internal.res.,com.sun.org.apache.xml.internal.resolver.helpers.,com.sun.org.apache.xml.internal.resolver.readers.,com.sun.org.apache.xml.internal.security.,com.sun.org.apache.xml.internal.serializer.utils.,com.sun.org.apache.xml.internal.utils.,com.sun.org.glassfish.,com.oracle.xmlns.internal.,com.oracle.webservices.internal.,oracle.jrockit.jfr.,org.jcp.xml.dsig.internal.,jdk.internal.,jdk.nashorn.internal.,jdk.nashorn.tools.,jdk.xml.internal.,com.sun.activation.registries.,jdk.jfr.events.,jdk.jfr.internal.,jdk.management.jfr.internal.
