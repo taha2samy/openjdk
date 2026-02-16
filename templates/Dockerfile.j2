@@ -35,7 +35,6 @@ ARG BCUTIL_FIPS_URL
 ARG BCTLS_FIPS_URL
 RUN apk add --no-cache curl
 
-COPY migrate.js /tmp/migrate.js
 COPY java.security /tmp/java.security
 
 RUN curl -fLso /tmp/bc-fips.jar "$BC_FIPS_URL" && \
