@@ -1,38 +1,42 @@
 import os
+import re
 from jinja2 import Environment, FileSystemLoader
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 VERSIONS_DIR = os.path.join(BASE_DIR, 'versions')
-HCL_FILE = os.path.join(BASE_DIR, 'versions.hcl')
+VERSIONS_HCL = os.path.join(BASE_DIR, 'versions.hcl')
+BAKE_HCL = os.path.join(BASE_DIR, 'docker-bake.hcl')
 
 TARGET_VERSIONS = ["8", "11", "17", "21", "25"]
 
-def parse_hcl_vars(file_path):
-    """Simple parser to extract variable values from versions.hcl"""
+def parse_hcl_to_dict(file_path):
     variables = {}
     if not os.path.exists(file_path):
-        print(f"Error: {file_path} not found.")
+        print(f"Warning: {file_path} not found.")
         return variables
 
     with open(file_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if '=' in line and not line.startswith('#'):
-                key, value = line.split('=', 1)
-                key = key.strip()
-                value = value.strip().strip('"')
-                variables[key] = value
+        content = f.read()
+
+    flat_vars = re.findall(r'^(\w+)\s*=\s*"([^"]+)"', content, re.MULTILINE)
+    for key, val in flat_vars:
+        variables[key] = val
+
+    bake_vars = re.findall(r'variable\s+"(\w+)"\s*{\s*default\s*=\s*"([^"]+)"', content)
+    for key, val in bake_vars:
+        variables[key] = val
+
     return variables
 
 def main():
-    hcl_vars = parse_hcl_vars(HCL_FILE)
-    
-    wolfi_base = hcl_vars.get("WOLFI_BASE_DIGEST", "latest")
-    wolfi_static = hcl_vars.get("WOLFI_STATIC_DIGEST", "latest")
+    config_data = {}
+    config_data.update(parse_hcl_to_dict(VERSIONS_HCL))
+    config_data.update(parse_hcl_to_dict(BAKE_HCL))
 
-    print(f"Loaded Wolfi Base: {wolfi_base}")
-    print(f"Loaded Wolfi Static: {wolfi_static}")
+    print(f"Loaded {len(config_data)} variables from HCL files.")
+    print(f"Base Digest: {config_data.get('WOLFI_BASE_DIGEST', 'N/A')}")
+    print(f"Registry: {config_data.get('DOCKER_REGISTRY', 'N/A')}")
 
     env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
 
@@ -41,38 +45,29 @@ def main():
         output_path = os.path.join(VERSIONS_DIR, version_str)
         os.makedirs(output_path, exist_ok=True)
 
-        context = {
-            "version": version_str,
-            "WOLFI_BASE_DIGEST": wolfi_base,
-            "WOLFI_STATIC_DIGEST": wolfi_static
-        }
+        context = config_data.copy()
+        context.update({
+            "version": version_str
+        })
 
-        print(f"Generating files for Java {version_str}...")
+        print(f"--- Processing Java {version_str} ---")
 
-        # 1. Render Dockerfile
-        try:
-            docker_tpl = env.get_template("Dockerfile.j2")
-            with open(os.path.join(output_path, "Dockerfile"), "w") as f:
-                f.write(docker_tpl.render(context))
-        except Exception as e:
-            print(f"Error rendering Dockerfile for {version_str}: {e}")
+        templates_to_render = [
+            ("Dockerfile.j2", "Dockerfile"),
+            ("build.hcl.j2", "build.hcl"),
+            ("java.security.j2", "java.security")
+        ]
 
-        # 2. Render build.hcl
-        try:
-            build_tpl = env.get_template("build.hcl.j2")
-            with open(os.path.join(output_path, "build.hcl"), "w") as f:
-                f.write(build_tpl.render(context))
-        except Exception as e:
-            print(f"Error rendering build.hcl for {version_str}: {e}")
+        for tpl_name, out_name in templates_to_render:
+            try:
+                tpl = env.get_template(tpl_name)
+                rendered_content = tpl.render(context)
 
-        # 3. Render java.security (The new part)
-        try:
-            java_sec_tpl = env.get_template("java.security.j2")
-            with open(os.path.join(output_path, "java.security"), "w") as f:
-                f.write(java_sec_tpl.render(context))
-            print(f"Successfully generated java.security for {version_str}")
-        except Exception as e:
-            print(f"Error rendering java.security for {version_str}: {e}")
+                with open(os.path.join(output_path, out_name), "w") as f:
+                    f.write(rendered_content)
+                print(f"  [OK] {out_name}")
+            except Exception as e:
+                print(f"  [ERROR] Failed to render {tpl_name}: {e}")
 
 if __name__ == "__main__":
     main()
