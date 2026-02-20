@@ -94,7 +94,7 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 {% if version == '8' %}
 RUN apk add --no-cache tree && tree /opt/java && echo "hallo world" || exit 1
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
+#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
@@ -126,7 +126,7 @@ RUN mkdir -p /opt/java/jre/lib && \
     ln -s /opt/java/lib/ext /opt/java/jre/lib/ext && \
     ln -s /opt/java/lib/security /opt/java/jre/lib/security
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
+#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
@@ -165,7 +165,7 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}" LANG=C.UTF-8 TZ=UTC
 {% if version == '8' %}
 
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
+#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
