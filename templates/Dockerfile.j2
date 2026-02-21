@@ -103,7 +103,16 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
 # To allow SHA-1 signatures, append: -Dorg.bouncycastle.rsa.allow_sha1_sig=true
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="\
+    -Dorg.bouncycastle.fips.approved_only=true \
+    -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
+    -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
+    -Djdk.tls.trustNameService=true \
+    -Dkeystore.type=BCFKS \
+    -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts \
+    -Djavax.net.ssl.trustStoreType=BCFKS \
+    -Djavax.net.ssl.trustStorePassword=changeit \
+    -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 ENTRYPOINT []
 USER java
@@ -135,7 +144,16 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
 # To allow SHA-1 signatures, append: -Dorg.bouncycastle.rsa.allow_sha1_sig=true
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="\
+    -Dorg.bouncycastle.fips.approved_only=true \
+    -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
+    -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
+    -Djdk.tls.trustNameService=true \
+    -Dkeystore.type=BCFKS \
+    -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts \
+    -Djavax.net.ssl.trustStoreType=BCFKS \
+    -Djavax.net.ssl.trustStorePassword=changeit \
+    -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 
 ENTRYPOINT []
@@ -174,7 +192,16 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
 # To allow SHA-1 signatures, append: -Dorg.bouncycastle.rsa.allow_sha1_sig=true
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="\
+    -Dorg.bouncycastle.fips.approved_only=true \
+    -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
+    -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
+    -Djdk.tls.trustNameService=true \
+    -Dkeystore.type=BCFKS \
+    -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts \
+    -Djavax.net.ssl.trustStoreType=BCFKS \
+    -Djavax.net.ssl.trustStorePassword=changeit \
+    -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 
 USER java
