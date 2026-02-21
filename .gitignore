@@ -8,6 +8,7 @@ versions/25/*
 .github/scripts/generate_readme.py
 templates/java-version-row.md.j2
 *.json
+!.devcontainer/devcontainer.json
 !versions/8/java.security
 !versions/11/java.security
 !versions/17/java.security
