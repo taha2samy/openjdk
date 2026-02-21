@@ -94,7 +94,6 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}"
 {% if version == '8' %}
 RUN apk add --no-cache tree && tree /opt/java && echo "hallo world" || exit 1
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
@@ -102,7 +101,10 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts \
     -Djavax.net.ssl.trustStoreType=BCFKS \
     -Djavax.net.ssl.trustStorePassword=changeit \
-    -Xbootclasspath/a:/opt/java/lib/ext/bc-fips.jar:/opt/java/lib/ext/bcutil-fips.jar:/opt/java/lib/ext/bctls-fips.jar"
+    -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+
+
+# Dorg.bouncycastle.rsa.allow_sha1_sig=true 
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.rsa.allow_sha1_sig=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
@@ -126,7 +128,6 @@ RUN mkdir -p /opt/java/jre/lib && \
     ln -s /opt/java/lib/ext /opt/java/jre/lib/ext && \
     ln -s /opt/java/lib/security /opt/java/jre/lib/security
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
@@ -135,10 +136,12 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Djavax.net.ssl.trustStoreType=BCFKS \
     -Djavax.net.ssl.trustStorePassword=changeit \
     -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+
+
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.rsa.allow_sha1_sig=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
-
+#  Dorg.bouncycastle.rsa.allow_sha1_sig=true 
 ENTRYPOINT []
 USER java
 WORKDIR /home/java
@@ -165,7 +168,6 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:${PATH}" LANG=C.UTF-8 TZ=UTC
 {% if version == '8' %}
 
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
-#    -Dorg.bouncycastle.rsa.allow_sha1_sig=true \
     -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false \
     -Dorg.bouncycastle.jsse.trustManager.checkEKU=false \
     -Djdk.tls.trustNameService=true \
@@ -174,10 +176,14 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true \
     -Djavax.net.ssl.trustStoreType=BCFKS \
     -Djavax.net.ssl.trustStorePassword=changeit \
     -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+
+
+
+    
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.rsa.allow_sha1_sig=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
-
+# Dorg.bouncycastle.rsa.allow_sha1_sig=true 
 USER java
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]
