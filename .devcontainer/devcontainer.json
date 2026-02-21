@@ -1,0 +1,33 @@
+{
+  "name": "Ghost-Core Dev Container",
+  "build": {
+    "dockerfile": "dockerfile"
+  },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": false
+    }
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "locale": "en",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "skellock.just",
+        "task.vscode-task",
+        "donjayamanne.githistory",
+        "vscode-icons-team.vscode-icons"
+      ]
+    }
+  },
+  "postCreateCommand": "echo 'i ready'"
+}

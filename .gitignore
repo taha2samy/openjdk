@@ -7,8 +7,9 @@ versions/17/*
 versions/25/*
 .github/scripts/generate_readme.py
 templates/java-version-row.md.j2
-*.json
-!.devcontainer/devcontainer.json
+
+versions/*/*.json
+
 !versions/8/java.security
 !versions/11/java.security
 !versions/17/java.security
@@ -17,7 +18,6 @@ templates/java-version-row.md.j2
 !versions/8/migrate.js
 !versions/11/migrate.js
 versions/*/Dockerfile
-*.json
 versions/*/java.security
 versions/*/build.hcl
 versions/*/Dockerfile
