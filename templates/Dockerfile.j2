@@ -72,11 +72,8 @@ CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
     cp /tmp/java.security "$SEC_FILE" && \
     rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
 
-FROM cgr.dev/chainguard/wolfi-base AS helper
-RUN apk add --no-cache libstdc++ zlib tzdata posix-libc-utils ca-certificates
-RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
-RUN mkdir -p /etc && touch /etc/nsswitch.conf && ln -sf /usr/lib/libz.so.1 /usr/lib/libz.so
-RUN cp /usr/share/zoneinfo/UTC /etc/localtime && echo "UTC" > /etc/timezone
+    
+
 
 FROM cgr.dev/chainguard/wolfi-base AS jdk-standard
 RUN apk add --no-cache libstdc++ zlib tzdata bash curl posix-libc-utils ca-certificates
