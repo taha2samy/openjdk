@@ -18,6 +18,8 @@ image_flavors:
     options:
       has_shell: true 
     packages:
+      - "apk-tools"
+      - "wolfi-keys"
       - "glibc"
       - "zlib"
       - "ca-certificates"
@@ -34,6 +36,8 @@ image_flavors:
     options:
       has_shell: true
     packages:
+      - "apk-tools"
+      - "wolfi-keys"
       - "glibc"
       - "zlib"
       - "ca-certificates"

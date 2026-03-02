@@ -1,0 +1,129 @@
+version: '3'
+
+tasks:
+
+  update-db:
+    desc: "Update Trivy Vulnerability Database"
+    cmds:
+      - mkdir -p .trivycache
+      - docker run --rm -v "$(pwd)/.trivycache:/root/.cache" aquasec/trivy image --download-db-only
+
+
+  scan-security-full:
+    desc: "Deep security scan for all layers"
+    internal: true
+    silent: true
+    vars:
+      IMAGE: '{{.IMAGE}}'
+      REPORT_ID: '{{.REPORT_ID}}'
+      OS: '{{.OS}}'
+      OUT_DIR: '{{.OUT_DIR}}'
+    cmds:
+      - mkdir -p {{.OUT_DIR}}
+      - |
+        echo "Running Deep Security Scan (All Layers)..."
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v "$(pwd)/{{.OUT_DIR}}:/reports" \
+          -v "$(pwd)/.trivycache:/root/.cache" \
+          aquasec/trivy image \
+          --distro {{.OS}} \
+          --removed-pkgs \
+          --scanners vuln,secret,misconfig,license \
+          --format json \
+          --output "/reports/{{.REPORT_ID}}-security-full.json" \
+          "{{.IMAGE}}"
+
+
+  scan-image:
+    desc: "Scan image using Trivy inside Docker with Path protection"
+    vars:
+      IMAGE: '{{.IMAGE}}'
+      REPORT_ID: '{{.REPORT_ID}}'
+      COMPLIANCE: '{{.COMPLIANCE | default ""}}'
+      OS: '{{.OS | default ""}}'
+      IS_DISTROLESS: '{{.IS_DISTROLESS | default "false"}}'
+      OUT_DIR: '{{.OUT_DIR}}'
+    cmds:
+      - mkdir -p "{{.OUT_DIR}}"
+      - mkdir -p .trivycache
+
+      - |
+        echo "Starting Full Scan..."
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v "$(pwd)/{{.OUT_DIR}}:/reports" \
+          -v "$(pwd)/.trivycache:/root/.cache" \
+          aquasec/trivy image \
+          {{if .OS}}--distro {{.OS}}{{end}} \
+          {{if .COMPLIANCE}}--compliance {{.COMPLIANCE}}{{end}} \
+          --format json \
+          --output "/reports/{{.REPORT_ID}}_full.json" \
+          "{{.IMAGE}}"
+
+      - |
+        echo "Generating Summary..."
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v "$(pwd)/.trivycache:/root/.cache" \
+          aquasec/trivy image \
+          {{if .COMPLIANCE}}--compliance {{.COMPLIANCE}} --report summary{{else}}--severity HIGH,CRITICAL{{end}} \
+          --format table \
+          "{{.IMAGE}}"
+
+
+
+  full-compliance:
+    desc: "scan image with all compliances and Vulnerability  and save them in {{.REPORT_DIR}}"
+    vars:
+      IMAGE: "{{.IMAGE}}"
+      REPORT_ID: "{{.REPORT_ID}}"
+      OS: "{{.OS}}"
+      IS_DISTROLESS: "{{.IS_DISTROLESS}}"
+      docker_cis: "docker-cis-1.6.0"
+      k8s_nsa: "k8s-nsa-1.0"
+      k8s_pss_restricted: "k8s-pss-restricted-0.1"
+    cmds:
+      - task: scan-image
+        vars:
+          IMAGE: "{{.IMAGE}}"
+          REPORT_ID: "{{.REPORT_ID}}-docker-cis"
+          COMPLIANCE: "{{.docker_cis}}"
+          OS: "{{.OS}}"
+          IS_DISTROLESS: "{{.IS_DISTROLESS}}"
+      - task: scan-image
+        vars:
+          IMAGE: "{{.IMAGE}}"
+          REPORT_ID: "{{.REPORT_ID}}-k8s-nsa"
+          COMPLIANCE: "{{.k8s_nsa}}"
+          OS: "{{.OS}}"
+          IS_DISTROLESS: "{{.IS_DISTROLESS}}"
+      - task: scan-image
+        vars:
+          IMAGE: "{{.IMAGE}}"
+          REPORT_ID: "{{.REPORT_ID}}-k8s-pss-restricted"
+          COMPLIANCE: "{{.k8s_pss_restricted}}"
+          OS: "{{.OS}}"
+          IS_DISTROLESS: "{{.IS_DISTROLESS}}"
+      - task: scan-security-full
+        vars: { IMAGE: "{{.IMAGE}}", REPORT_ID: "{{.REPORT_ID}}", OS: "{{.OS}}" }
+
+
+
+  scan-kics:
+    desc: "Run KICS scan with dynamic path handling"
+    cmds:
+      - sed -i 's/- "/- "\/path\//g' kics.yaml
+
+      - |
+        docker run --rm \
+          -v "$PWD":/path \
+          -w /path \
+          checkmarx/kics:latest scan \
+          -p /path \
+          --config /path/kics.yaml \
+          --output-path /path/reports \
+          --output-name kics-report || true   
+             
+      - sed -i 's/\/path\///g' kics.yaml
+      - echo "KICS scan finished. Config restored and reports cleaned."

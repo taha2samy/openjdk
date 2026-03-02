@@ -1,5 +1,8 @@
 version: "3"
 
+includes:
+  scan-compliance: tasks/Taskfile.scan-compliance.yml
+
 output:
   group:
     begin: '::group::{{.TASK}}'

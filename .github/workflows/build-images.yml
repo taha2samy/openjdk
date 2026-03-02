@@ -154,14 +154,20 @@ jobs:
       - name: debug
         run: |
           echo "digest=${{ steps.get-digest.outputs.digest }}"
+      
+      - name: login to ghcr
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
+        with:
+          registry: ghcr.io
+          username: ${{ env.OWNER_LC }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      #       - name: Attest JDK (SLSA)
-      #   if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
-      #   uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
-      #   with:
-      #     subject-name: ${{ env.ghcr_image }}
-      #     subject-digest: ${{ steps.digests.outputs.jdk }}
-      #     push-to-registry: true
+      - name: Attest ${{ matrix.image_type }} (SLSA)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        with:
+          subject-name: ${{ env.ghcr_image }}
+          subject-digest: ${{ steps.get-digest.outputs.digest }}
+          push-to-registry: true
 
       # - name: Attest JRE (SLSA)
       #   if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''

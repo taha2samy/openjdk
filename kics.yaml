@@ -1,0 +1,16 @@
+exclude-paths:
+  - ".git"
+  - ".devcontainer"
+
+output-path: "reports" 
+output-name: "kics-report"
+report-formats:
+  - json
+  - sarif
+fail-on:
+  - critical
+  - high
+  - medium
+  - low
+ignore-on-exit: none
+
