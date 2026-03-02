@@ -58,7 +58,6 @@ def render_all():
             
             flavor_pkgs = []
             for pkg in f_spec.get("packages", []):
-                # التحقق: لو الباكيدج موجودة وليها إصدار حطها، لو مش موجودة عديها (Skip)
                 version = source_packages.get(pkg)
                 if version:
                     flavor_pkgs.append(f"{pkg}={version}")

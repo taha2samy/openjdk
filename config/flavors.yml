@@ -29,7 +29,7 @@ image_flavors:
       - "busybox"
       - "tzdata"
 
-  jdk-devel:
+  jdk-standard:
     java_type: "jdk"
     options:
       has_shell: true

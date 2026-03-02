@@ -25,13 +25,13 @@ RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
     ln -sf busybox /rootfs/jre_standard/usr/bin/$applet; \
     done && ln -sf busybox /rootfs/jre_standard/usr/bin/sh
 
-RUN mkdir -p /rootfs/jdk_devel && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk_devel \
+RUN mkdir -p /rootfs/jdk-standard && \
+    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk-standard \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jdk_devel.packages %}{{ pkg }} {% endfor %}
-RUN for applet in $(/rootfs/jdk_devel/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jdk_devel/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jdk_devel/usr/bin/sh
+    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %}
+RUN for applet in $(/rootfs/jdk-standard/usr/bin/busybox --list); do \
+    ln -sf busybox /rootfs/jdk-standard/usr/bin/$applet; \
+    done && ln -sf busybox /rootfs/jdk-standard/usr/bin/sh
 
 
 FROM {{ alpine }} AS fetcher
@@ -108,7 +108,7 @@ RUN set -e; \
 
 FROM scratch AS jdk-standard
 COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jdk_devel /
+COPY --from=producer /rootfs/jdk-standard /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 {% if version == '8' %}

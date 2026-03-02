@@ -12,7 +12,7 @@ target "_java{{ version }}-common" {
 {% for f_name, f_spec in flavors.items() %}
 target "java{{ version }}-{{ f_name }}" {
   inherits = ["_java{{ version }}-common"]
-  target   = "{{ f_name | replace('-', '_') }}"
+  target   = "{{ f_spec.name }}"
   tags = [
     "${GHCR_REGISTRY}/${REPO_GHCR}:{{ version }}-{{ f_name }}",
     "${GHCR_REGISTRY}/${REPO_GHCR}:{{ full_ver | replace('+', '_') }}-{{ f_name }}"
