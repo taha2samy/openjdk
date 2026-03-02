@@ -14,26 +14,30 @@ USER root
 RUN mkdir -p /rootfs/jre_distroless && \
     apk add --no-cache --initdb --no-scripts --root /rootfs/jre_distroless \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %} \
-    cp -a /etc/apk/ /rootfs/etc/apk/ 
+    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %} 
 
-RUN mkdir -p /rootfs/jre_standard && \
+RUN mkdir -p /rootfs/jre_standard/etc/apk && \
+    cp -a /etc/apk/keys /etc/apk/repositories /rootfs/jre_standard/etc/apk/ && \
     apk add --no-cache --initdb --no-scripts --root /rootfs/jre_standard \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %} \
-    cp -a /etc/apk/ /rootfs/etc/apk/ 
+    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %}
+
 RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
     ln -sf busybox /rootfs/jre_standard/usr/bin/$applet; \
     done && ln -sf busybox /rootfs/jre_standard/usr/bin/sh
 
-RUN mkdir -p /rootfs/jdk-standard && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk-standard \
+RUN mkdir -p /rootfs/jdk_standard/etc/apk && \
+    cp -a /etc/apk/keys /etc/apk/repositories /rootfs/jdk_standard/etc/apk/ && \
+    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk_standard \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %} \
-    cp -a /etc/apk/ /rootfs/etc/apk/ 
-RUN for applet in $(/rootfs/jdk-standard/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jdk-standard/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jdk-standard/usr/bin/sh
+    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %}
+
+RUN for applet in $(/rootfs/jdk_standard/usr/bin/busybox --list); do \
+    ln -sf busybox /rootfs/jdk_standard/usr/bin/$applet; \
+    done && ln -sf busybox /rootfs/jdk_standard/usr/bin/sh
+
+
+
 
 
 FROM {{ alpine }} AS fetcher
