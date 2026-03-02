@@ -89,7 +89,7 @@ jobs:
       - name: Extract Digests
         id: digests
         run: |
-          METADATA='${{ steps.bake.outputs.metadata }}'          
+          METADATA='${{ steps.build.outputs.metadata }}'          
           JDK_TARGET="java${{ matrix.java_version }}-jdk_standard"
           JRE_TARGET="java${{ matrix.java_version }}-jre_standard"
           DISTRO_TARGET="java${{ matrix.java_version }}-jre_distroless"
