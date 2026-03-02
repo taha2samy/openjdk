@@ -1,0 +1,17 @@
+{{ version }}
+{{full_ver}}
+{{bouncycastle_fips_sha}}
+{{bouncycastle_util_sha}}
+{{bouncycastle_tls_sha}}
+
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_fips_sha }} \
+    {{ bouncycastle_fips_url }} /tmp/bc-fips.jar
+
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_util_fips_sha }} \
+    {{ bouncycastle_util_fips_url }} /tmp/bcutil-fips.jar
+
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_tls_fips_sha }} \
+    {{ bouncycastle_tls_fips_url }} /tmp/bctls-fips.jar
+
+
+

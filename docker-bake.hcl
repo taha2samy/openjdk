@@ -1,31 +1,24 @@
-variable "DOCKER_REGISTRY" {
-  default = "docker.io/taha2samy"
-}
-
-variable "GHCR_REGISTRY" {
+variable "REGISTRY" {
   default = "ghcr.io/taha2samy"
 }
 
-variable "REPO_DOCKER" {
+variable "REPO" {
   default = "java"
 }
-
-variable "REPO_GHCR" {
-  default = "java"
-}
-
 
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
-  cache-from = ["type=registry,ref=${GHCR_REGISTRY}/${REPO_GHCR}:cache-${CACHE_TAG}"]
-  cache-to   = ["type=registry,ref=${GHCR_REGISTRY}/${REPO_GHCR}:cache-${CACHE_TAG},mode=min"]
+  cache-from = ["type=gha"]
+  cache-to   = ["type=gha,mode=max"]
   attest = [
     "type=provenance,mode=max",
-    "type=sbom,format=cyclonedx-json"
-
+    "type=sbom"
   ]
+  output = ["type=image,compression=zstd,compression-level=3,force-compression=true"]
+}
 
-
+group "default" {
+  targets = ["java8", "java11", "java17", "java21", "java25"]
 }
 
 group "java8" {
@@ -43,7 +36,7 @@ group "java17" {
 group "java21" {
   targets = ["java21-jre-std", "java21-jdk-std", "java21-jre-distroless"]
 }
+
 group "java25" {
   targets = ["java25-jre-std", "java25-jdk-std", "java25-jre-distroless"]
 }
-

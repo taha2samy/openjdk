@@ -1,16 +1,49 @@
 version: "3"
 
+output:
+  group:
+    begin: '::group::{{.TASK}}'
+    end: '::endgroup::'
 
 tasks:
-  update-java:
+  resolve:
+    desc: "Fetch and resolve all dependencies (Java, Images, Packages) and update context.json"
     cmds:
-      - python .github/scripts/update_java.py
+      - pipenv run python scripts/resolve_dependencies.py
     silent: true
 
-  generate-template:
+  render:
+    desc: "Generate unified Dockerfiles and security configurations from templates"
     cmds:
-      - python .github/scripts/render_templates.py
+      - pipenv run python render.py
     silent: true
 
+  build:
+    desc: "Build all docker images using the generated versions"
+    cmds:
+      - docker buildx bake
+    silent: false
 
+  check-java:
+    desc: "Test Adoptium API metadata fetching"
+    cmds:
+      - pipenv run python scripts/java_fetcher.py
+    silent: true
 
+  check-wolfi:
+    desc: "Test Wolfi OS package version resolving"
+    cmds:
+      - pipenv run python scripts/package_fetcher.py
+    silent: true
+
+  check-images:
+    desc: "Test Docker image digest resolution"
+    cmds:
+      - pipenv run python scripts/image_fetcher.py
+    silent: true
+
+  workflow:
+    desc: "Execute full automation pipeline: Resolve then Render"
+    cmds:
+      - task: resolve
+      - task: render

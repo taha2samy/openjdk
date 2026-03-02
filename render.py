@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import shutil
+import yaml
+import logging
+from jinja2 import Environment, FileSystemLoader
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger("RENDERER")
+
+RENDER_MAP = {
+    "just.txt.j2": "just.txt",
+    "Dockerfile.j2": "Dockerfile",
+    "java.security.j2": "java.security",
+    "build.hcl.j2": "build.hcl"
+}
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONTEXT_FILE = os.path.join(BASE_DIR, "config/context.json")
+FLAVORS_FILE = os.path.join(BASE_DIR, "config/flavors.yml")
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+OUTPUT_ROOT = os.path.join(BASE_DIR, "versions")
+
+def load_data():
+    with open(CONTEXT_FILE, 'r') as f:
+        context = json.load(f)
+    with open(FLAVORS_FILE, 'r') as f:
+        flavors = yaml.safe_load(f)
+    return context, flavors
+
+def render_all():
+    context, flavors_cfg = load_data()
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    
+    source_packages = context.get("wolfi_packages", {})
+    java_versions = context.get("java", {})
+    image_flavors = flavors_cfg.get("image_flavors", {})
+
+    for v_key, v_data in java_versions.items():
+        v_output_dir = os.path.join(OUTPUT_ROOT, v_key)
+        os.makedirs(v_output_dir, exist_ok=True)
+
+        # 1. Flatten variables (Images, Java version data, BouncyCastle)
+        flat_vars = {}
+        flat_vars.update(context.get('images', {}))
+        flat_vars.update(v_data)
+        
+        # Inject global keys (like bouncycastle_fips_sha etc.)
+        for k, v in context.items():
+            if k not in ['java', 'images', 'wolfi_packages']:
+                flat_vars[k] = v
+
+        # 2. Process Flavors
+        resolved_flavors = {}
+        for f_name, f_spec in image_flavors.items():
+            
+            flavor_pkgs = []
+            for pkg in f_spec.get("packages", []):
+                # التحقق: لو الباكيدج موجودة وليها إصدار حطها، لو مش موجودة عديها (Skip)
+                version = source_packages.get(pkg)
+                if version:
+                    flavor_pkgs.append(f"{pkg}={version}")
+                else:
+                    logger.warning(f"Package '{pkg}' skipped for flavor '{f_name}' (No version found in context)")
+            
+            clean_name = f_name.replace("-", "_")
+            resolved_flavors[clean_name] = {
+                "name": f_name,
+                "java_type": f_spec.get("java_type"),
+                "options": f_spec.get("options", {}),
+                "packages": flavor_pkgs
+            }
+        
+        flat_vars["flavors"] = resolved_flavors
+
+        # 3. Final Render
+        for src_tpl, out_name in RENDER_MAP.items():
+            try:
+                template = env.get_template(src_tpl)
+                content = template.render(**flat_vars)
+                with open(os.path.join(v_output_dir, out_name.strip()), 'w') as f:
+                    f.write(content)
+            except Exception as e:
+                logger.error(f"Failed to render {src_tpl}: {e}")
+
+    logger.info(f"✅ Render complete for {len(java_versions)} versions.")
+
+if __name__ == "__main__":
+    if os.path.exists(OUTPUT_ROOT):
+        shutil.rmtree(OUTPUT_ROOT)
+    render_all()

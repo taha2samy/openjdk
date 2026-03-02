@@ -1,0 +1,48 @@
+image_flavors:
+  jre-distroless:
+    java_type: "jre"
+    options:
+      has_shell: false
+    packages:
+      - "glibc"
+      - "zlib"
+      - "ca-certificates"
+      - "wolfi-baselayout"
+      - "wolfi-keys"
+      - "libgcc"
+      - "libstdc++"
+      - "tzdata"
+
+  jre-standard:
+    java_type: "jre"
+    options:
+      has_shell: true 
+    packages:
+      - "glibc"
+      - "zlib"
+      - "ca-certificates"
+      - "wolfi-baselayout"
+      - "wolfi-keys"
+      - "libgcc"
+      - "libstdc++"
+      - "posix-libc-utils"
+      - "busybox"
+      - "tzdata"
+
+  jdk-devel:
+    java_type: "jdk"
+    options:
+      has_shell: true
+    packages:
+      - "glibc"
+      - "zlib"
+      - "ca-certificates"
+      - "wolfi-baselayout"
+      - "wolfi-keys"
+      - "libgcc"
+      - "libstdc++"
+      - "posix-libc-utils"
+      - "busybox"
+      - "bash"
+      - "curl"
+      - "tzdata"

@@ -7,7 +7,7 @@ versions/17/*
 versions/25/*
 .github/scripts/generate_readme.py
 templates/java-version-row.md.j2
-
+__pycache__
 versions/*/*.json
 
 !versions/8/java.security
