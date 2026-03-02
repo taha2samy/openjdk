@@ -51,7 +51,7 @@ jobs:
         java_version: ${{ fromJSON(needs.prepare-matrix.outputs.versions) }}
 
     steps:
-      
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
       - name: Setup Environment
         run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
@@ -59,7 +59,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
 
       - name: Setup Taskfile
-        uses: ./.github/setup-taskfile/action.yml
+        uses: ./.github/actions/setup-taskfile/action.yml
       - name: Resolve and Render
         run: task render
 
