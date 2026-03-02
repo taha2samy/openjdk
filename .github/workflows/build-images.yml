@@ -117,11 +117,16 @@ jobs:
           echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
           echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
           echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
+          task generate-report \
+            VERSION=${{ matrix.java_version }} \
+            JDK_SHA=$JDK_SHA \
+            JRE_SHA=$JRE_SHA \
+            DISTRO_SHA=$DISTRO_SHA
       - name: Attest JDK (SLSA)
         if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ${{ env.ghcr_image }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
@@ -129,7 +134,7 @@ jobs:
         if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
         uses:  actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ${{ env.ghcr_image }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
@@ -137,7 +142,7 @@ jobs:
         if: steps.digests.outputs.distro != 'null' && steps.digests.outputs.distro != ''
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/java
+          subject-name: ${{ env.ghcr_image }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
       - name: Upload Build Report Artifact
