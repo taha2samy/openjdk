@@ -85,5 +85,3 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
           targets: java${{ matrix.java_version }}
           push: true
-          set: |-
-            *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
