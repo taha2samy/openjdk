@@ -99,32 +99,31 @@ jobs:
           echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
           
       - name: Attest JDK (SLSA)
-        if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != 
-          ''
-        uses: 
-          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jdk }}
           push-to-registry: true
 
       - name: Attest JRE (SLSA)
-        if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != 
-          ''
-        uses: 
-          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
+        uses:  actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.jre }}
           push-to-registry: true
 
       - name: Attest Distroless (SLSA)
-        if: steps.digests.outputs.distro != 'null' && 
-          steps.digests.outputs.distro != ''
-        uses: 
-          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        if: steps.digests.outputs.distro != 'null' && steps.digests.outputs.distro != ''
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
         with:
           subject-name: ${{ env.GHCR_FULL_IMAGE }}
           subject-digest: ${{ steps.digests.outputs.distro }}
           push-to-registry: true
-
+      - name: Upload Build Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report-java-${{ matrix.java_version }}
+          path: reports/${{ matrix.java_version }}/main.json
+          retention-days: 30 
