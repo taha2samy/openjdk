@@ -105,8 +105,8 @@ RUN set -e; \
     rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
 
 FROM scratch AS jdk-standard
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jdk-standard /
+COPY --from=helper /rootfs /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 {% if version == '8' %}
@@ -132,8 +132,8 @@ WORKDIR /home/java
 ENTRYPOINT []
 
 FROM scratch AS jre-standard
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_standard /
+COPY --from=helper /rootfs /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 {% if version == '8' %}
@@ -159,9 +159,10 @@ WORKDIR /home/java
 ENTRYPOINT []
 
 FROM scratch AS jre-distroless
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_distroless /
+COPY --from=helper /rootfs /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
+
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 TZ=UTC
 {% if version == '8' %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
