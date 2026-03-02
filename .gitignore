@@ -10,13 +10,7 @@ templates/java-version-row.md.j2
 __pycache__
 versions/*/*.json
 
-!versions/8/java.security
-!versions/11/java.security
-!versions/17/java.security
-!versions/21/java.security
-!versions/25/java.security
-!versions/8/migrate.js
-!versions/11/migrate.js
+
 versions/*/Dockerfile
 versions/*/java.security
 versions/*/build.hcl

@@ -7,6 +7,7 @@ name = "pypi"
 jinja2 = "*"
 pyyaml = "*"
 requests = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 

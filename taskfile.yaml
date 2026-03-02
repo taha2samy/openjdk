@@ -6,6 +6,12 @@ output:
     end: '::endgroup::'
 
 tasks:
+  pin-workflow:
+    desc: "Pin GitHub Actions workflow versions to SHAs"
+    cmds:
+      - pipenv run python scripts/github_action_ver_to_sha.py
+    silent: true
+
   resolve:
     desc: "Fetch and resolve all dependencies (Java, Images, Packages) and update context.json"
     cmds:
