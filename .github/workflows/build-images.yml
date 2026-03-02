@@ -86,24 +86,23 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
           targets: java${{ matrix.java_version }}
           push: true
-
-      - name: Extract Root Index Digests
+      - name: Extract Digests
         id: digests
         run: |
           METADATA='${{ steps.build.outputs.metadata }}'
-          echo "$METADATA"
-          JDK_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk"["containerimage.digest"]')
-          JRE_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre"["containerimage.digest"]')
-          DISTRO_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-distroless"["containerimage.digest"]')          
-          echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
-          echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
-          echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
+          
+          JDK_TARGET="java${{ matrix.java_version }}-jdk_devel"
+          JRE_TARGET="java${{ matrix.java_version }}-jre_standard"
+          DISTRO_TARGET="java${{ matrix.java_version }}-jre_distroless"
+          
+          echo "jdk=$(echo "$METADATA" | jq -r --arg t "$JDK_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "jre=$(echo "$METADATA" | jq -r --arg t "$JRE_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
+          echo "distro=$(echo "$METADATA" | jq -r --arg t "$DISTRO_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
           task generate-report \
             VERSION="${{ matrix.java_version }}" \
-            JDK_SHA="$JDK_SHA" \
-            JRE_SHA="$JRE_SHA" \
-            DISTRO_SHA="$DISTRO_SHA"
-
+            JDK_SHA="${{ steps.digests.outputs.jdk }}" \
+            JRE_SHA="${{ steps.digests.outputs.jre }}" \
+            DISTRO_SHA="${{ steps.digests.outputs.distro }}"
           
       - name: Attest JDK (SLSA)
         if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
