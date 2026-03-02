@@ -8,7 +8,6 @@ RUN cp /etc/passwd /rootfs/etc/passwd && \
     echo "UTC" > /rootfs/etc/timezone && \
     cp -a /etc/apk/repositories /rootfs/etc/apk/
 
-
 FROM {{ wolfi_base }} AS producer
 USER root
 
