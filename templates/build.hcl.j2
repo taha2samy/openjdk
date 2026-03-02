@@ -1,6 +1,10 @@
 
+
+
 target "_java{{ version }}-common" {
   inherits = ["_common"]
+  cache-from = ["type=gha,scope=java-{{version}}"]
+  cache-to   = ["type=gha,mode=max,scope=java-{{version}}"]
   context  = "./versions/{{ version }}"
   dockerfile = "Dockerfile"
 }

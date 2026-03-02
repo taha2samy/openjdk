@@ -1,20 +1,18 @@
-variable "REGISTRY" {
+variable "GHCR_REGISTRY" {
   default = "ghcr.io/taha2samy"
 }
 
-variable "REPO" {
+variable "REPO_GHCR" {
   default = "java"
 }
 
 target "_common" {
   platforms = ["linux/amd64", "linux/arm64"]
-  cache-from = ["type=gha"]
-  cache-to   = ["type=gha,mode=max"]
   attest = [
     "type=provenance,mode=max",
     "type=sbom"
   ]
-  output = ["type=image,compression=zstd,compression-level=3,force-compression=true"]
+  output = ["type=registry,compression=zstd,compression-level=3,force-compression=true"]
 }
 
 group "default" {
