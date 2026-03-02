@@ -5,8 +5,6 @@ RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo
 RUN cp /etc/passwd /rootfs/etc/passwd && \
     cp /etc/group /rootfs/etc/group && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
-    cp /usr/share/zoneinfo/UTC /rootfs/usr/share/zoneinfo/UTC && \
-    cp /usr/share/zoneinfo/UTC /rootfs/etc/localtime && \
     echo "UTC" > /rootfs/etc/timezone
 
 FROM {{ wolfi_base }} AS producer
