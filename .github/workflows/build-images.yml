@@ -62,7 +62,7 @@ jobs:
           ls -la
           tree -a
       - name: Setup Taskfile
-        uses: ./.github/actions/setup-taskfile/action.yml
+        uses: ./.github/actions/setup-taskfile
       - name: Resolve and Render
         run: task render
 
