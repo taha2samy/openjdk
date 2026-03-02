@@ -1,21 +1,46 @@
-
-
-
 target "_java{{ version }}-common" {
   inherits = ["_common"]
-  cache-from = ["type=gha,scope=java-{{version}}"]
-  cache-to   = ["type=gha,mode=max,scope=java-{{version}}"]
   context  = "./versions/{{ version }}"
   dockerfile = "Dockerfile"
 }
 
-{% for f_name, f_spec in flavors.items() %}
-target "java{{ version }}-{{ f_name }}" {
+target "java{{ version }}-jre_distroless" {
   inherits = ["_java{{ version }}-common"]
-  target   = "{{ f_spec.name }}"
+  target   = "jre-distroless"
+  cache-from = ["type=gha,scope=java-{{version}}-jre_distroless"]
+  cache-to   = ["type=gha,mode=max,scope=java-{{version}}-jre_distroless"]
+
   tags = [
-    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ version }}-{{ f_name }}",
-    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ full_ver | replace('+', '_') }}-{{ f_name }}"
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ version }}-jre_distroless",
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ full_ver | replace('+', '_') }}-jre_distroless"
   ]
 }
-{% endfor %}
+
+target "java{{ version }}-jre_standard" {
+  inherits = ["_java{{ version }}-common"]
+  target   = "jre-standard"
+  cache-from = ["type=gha,scope=java-{{version}}-jre_standard"]
+  cache-to   = ["type=gha,mode=max,scope=java-{{version}}-jre_standard"]
+
+  tags = [
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ version }}-jre_standard",
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ full_ver | replace('+', '_') }}-jre_standard"
+  ]
+}
+
+target "java{{ version }}-jdk_standard" {
+  inherits = ["_java{{ version }}-common"]
+  target   = "jdk-standard"
+  cache-from = ["type=gha,scope=java-{{version}}-jdk_standard"]
+  cache-to   = ["type=gha,mode=max,scope=java-{{version}}-jdk_standard"]
+
+  tags = [
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ version }}-jdk_standard",
+    "${GHCR_REGISTRY}/${REPO_GHCR}:{{ full_ver | replace('+', '_') }}-jdk_standard"
+  ]
+}
+
+
+group "java{{ version }}" {
+  targets = ["java{{ version }}-jre_distroless", "java{{ version }}-jre_standard", "java{{ version }}-jdk_standard"]
+}
