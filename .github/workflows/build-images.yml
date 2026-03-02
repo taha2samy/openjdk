@@ -57,20 +57,10 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
-        run: |
-          pip install pipenv
-          pipenv install
-
+      - name: Setup Taskfile
+        uses: ./.github/actions/action.yml
       - name: Resolve and Render
-        run: |
-          pipenv run python scripts/resolve_dependencies.py
-          pipenv run python render.py
+        run: task render
 
       - name: Set up Docker Buildx
         uses: 
