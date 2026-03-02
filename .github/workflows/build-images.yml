@@ -58,7 +58,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
 
       - name: Setup Taskfile
-        uses: ./.github/actions/action.yml
+        uses: ./.github/setup-taskfile/action.yml
       - name: Resolve and Render
         run: task render
 
