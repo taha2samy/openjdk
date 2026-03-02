@@ -89,21 +89,25 @@ jobs:
       - name: Extract Digests
         id: digests
         run: |
-          METADATA='${{ steps.build.outputs.metadata }}'
-          
-          JDK_TARGET="java${{ matrix.java_version }}-jdk_devel"
+          METADATA='${{ steps.bake.outputs.metadata }}'          
+          JDK_TARGET="java${{ matrix.java_version }}-jdk_standard"
           JRE_TARGET="java${{ matrix.java_version }}-jre_standard"
           DISTRO_TARGET="java${{ matrix.java_version }}-jre_distroless"
           
-          echo "jdk=$(echo "$METADATA" | jq -r --arg t "$JDK_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
-          echo "jre=$(echo "$METADATA" | jq -r --arg t "$JRE_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
-          echo "distro=$(echo "$METADATA" | jq -r --arg t "$DISTRO_TARGET" '.[$t]["containerimage.digest"]')" >> $GITHUB_OUTPUT
-          task generate-report \
-            VERSION="${{ matrix.java_version }}" \
-            JDK_SHA="${{ steps.digests.outputs.jdk }}" \
-            JRE_SHA="${{ steps.digests.outputs.jre }}" \
-            DISTRO_SHA="${{ steps.digests.outputs.distro }}"
+          echo "Extracting digest for $JDK_TARGET..."
+          JDK_SHA=$(echo "$METADATA" | jq -r --arg t "$JDK_TARGET" '.[$t]["containerimage.digest"]')
           
+          echo "Extracting digest for $JRE_TARGET..."
+          JRE_SHA=$(echo "$METADATA" | jq -r --arg t "$JRE_TARGET" '.[$t]["containerimage.digest"]')
+          
+          echo "Extracting digest for $DISTRO_TARGET..."
+          DISTRO_SHA=$(echo "$METADATA" | jq -r --arg t "$DISTRO_TARGET" '.[$t]["containerimage.digest"]')          
+          echo "Found JDK SHA: $JDK_SHA"
+          echo "Found JRE SHA: $JRE_SHA"
+          echo "Found Distro SHA: $DISTRO_SHA"          
+          echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
+          echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
+          echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT          
       - name: Attest JDK (SLSA)
         if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
