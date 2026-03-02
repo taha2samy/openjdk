@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.6
 FROM {{ wolfi_base }} AS helper
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
-RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo /rootfs/etc/apk
+RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo /rootfs/etc/apk /rootfs/etc/apk/keys
 RUN cp /etc/passwd /rootfs/etc/passwd && \
     cp /etc/group /rootfs/etc/group && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
-    echo "UTC" > /rootfs/etc/timezone && \
-    echo "https://apk.cgr.dev/chainguard" > /rootfs/etc/apk/repositories 
+    echo "UTC" > /rootfs/etc/timezone
+
 
 FROM {{ wolfi_base }} AS producer
 USER root
@@ -14,12 +14,14 @@ USER root
 RUN mkdir -p /rootfs/jre_distroless && \
     apk add --no-cache --initdb --no-scripts --root /rootfs/jre_distroless \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %}
+    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %} \
+    cp -a /etc/apk/ /rootfs/etc/apk/ 
 
 RUN mkdir -p /rootfs/jre_standard && \
     apk add --no-cache --initdb --no-scripts --root /rootfs/jre_standard \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %}
+    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %} \
+    cp -a /etc/apk/ /rootfs/etc/apk/ 
 RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
     ln -sf busybox /rootfs/jre_standard/usr/bin/$applet; \
     done && ln -sf busybox /rootfs/jre_standard/usr/bin/sh
@@ -27,7 +29,8 @@ RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
 RUN mkdir -p /rootfs/jdk-standard && \
     apk add --no-cache --initdb --no-scripts --root /rootfs/jdk-standard \
     --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %}
+    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %} \
+    cp -a /etc/apk/ /rootfs/etc/apk/ 
 RUN for applet in $(/rootfs/jdk-standard/usr/bin/busybox --list); do \
     ln -sf busybox /rootfs/jdk-standard/usr/bin/$applet; \
     done && ln -sf busybox /rootfs/jdk-standard/usr/bin/sh
