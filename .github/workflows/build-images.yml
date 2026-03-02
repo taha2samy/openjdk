@@ -97,6 +97,12 @@ jobs:
           echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
           echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
           echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
+          task generate-report \
+            VERSION="${{ matrix.java_version }}" \
+            JDK_SHA="$JDK_SHA" \
+            JRE_SHA="$JRE_SHA" \
+            DISTRO_SHA="$DISTRO_SHA"
+
           
       - name: Attest JDK (SLSA)
         if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
