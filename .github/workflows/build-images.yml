@@ -90,7 +90,7 @@ jobs:
       - name: Extract Root Index Digests
         id: digests
         run: |
-          METADATA='${{ steps.bake.outputs.metadata }}'
+          METADATA='${{ steps.build.outputs.metadata }}'
           JDK_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk"["containerimage.digest"]')
           JRE_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre"["containerimage.digest"]')
           DISTRO_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-distroless"["containerimage.digest"]')          
