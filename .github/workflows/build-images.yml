@@ -91,6 +91,7 @@ jobs:
         id: digests
         run: |
           METADATA='${{ steps.build.outputs.metadata }}'
+          echo "$METADATA"
           JDK_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk"["containerimage.digest"]')
           JRE_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre"["containerimage.digest"]')
           DISTRO_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-distroless"["containerimage.digest"]')          
