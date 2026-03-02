@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.6
 FROM {{ wolfi_base }} AS helper
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
-RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo
+RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo /rootfs/etc/apk
 RUN cp /etc/passwd /rootfs/etc/passwd && \
     cp /etc/group /rootfs/etc/group && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
     echo "UTC" > /rootfs/etc/timezone && \
-    cp -a /etc/apk/repositories /rootfs/etc/apk/
+    echo "https://apk.cgr.dev/chainguard" > /rootfs/etc/apk/repositories 
 
 FROM {{ wolfi_base }} AS producer
 USER root
