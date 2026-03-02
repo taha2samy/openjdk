@@ -22,6 +22,11 @@ on:
 
 
 
+env:
+  OWNER_LC: ${{ github.repository_owner }}
+  registry: ghcr.io
+  repo: java
+  GHCR_FULL_IMAGE: "ghcr.io/${{ github.repository_owner }}/java"
 
 
 
@@ -115,11 +120,6 @@ jobs:
           echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
           echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
           echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
-          task generate-report \
-            VERSION="${{ matrix.java_version }}" \
-            JDK_SHA="${{ steps.digests.outputs.jdk }}" \
-            JRE_SHA="${{ steps.digests.outputs.jre }}" \
-            DISTRO_SHA="${{ steps.digests.outputs.distro }}"          
       - name: Attest JDK (SLSA)
         if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != ''
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
