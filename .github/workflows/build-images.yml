@@ -57,7 +57,10 @@ jobs:
         run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
         env:
           OWNER: ${{ github.repository_owner }}
-
+      - name: debug
+        run: |
+          ls -la
+          tree -a
       - name: Setup Taskfile
         uses: ./.github/actions/setup-taskfile/action.yml
       - name: Resolve and Render
