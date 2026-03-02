@@ -106,7 +106,7 @@ RUN set -e; \
 
 FROM scratch AS jdk-standard
 COPY --from=producer /rootfs/jdk-standard /
-COPY --from=helper /rootfs /
+COPY --from=helper /rootfs /etc/passwd /rootfs/etc/group /rootfs/etc/nsswitch.conf /rootfs/etc/timezone /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 {% if version == '8' %}

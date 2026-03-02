@@ -78,6 +78,7 @@ jobs:
 
       - name: Build and Push
         uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4  # v6
+        id: build
         with:
           source: .
           files: |
@@ -85,3 +86,45 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
           targets: java${{ matrix.java_version }}
           push: true
+
+      - name: Extract Root Index Digests
+        id: digests
+        run: |
+          METADATA='${{ steps.bake.outputs.metadata }}'
+          JDK_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jdk"["containerimage.digest"]')
+          JRE_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-jre"["containerimage.digest"]')
+          DISTRO_SHA=$(echo "$METADATA" | jq -r '."java${{ matrix.java_version }}-distroless"["containerimage.digest"]')          
+          echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
+          echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
+          echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
+          
+      - name: Attest JDK (SLSA)
+        if: steps.digests.outputs.jdk != 'null' && steps.digests.outputs.jdk != 
+          ''
+        uses: 
+          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jdk }}
+          push-to-registry: true
+
+      - name: Attest JRE (SLSA)
+        if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != 
+          ''
+        uses: 
+          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.jre }}
+          push-to-registry: true
+
+      - name: Attest Distroless (SLSA)
+        if: steps.digests.outputs.distro != 'null' && 
+          steps.digests.outputs.distro != ''
+        uses: 
+          actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+        with:
+          subject-name: ${{ env.GHCR_FULL_IMAGE }}
+          subject-digest: ${{ steps.digests.outputs.distro }}
+          push-to-registry: true
+
