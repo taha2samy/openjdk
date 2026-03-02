@@ -22,7 +22,7 @@ env:
   OWNER_LC: ${{ github.repository_owner }}
   registry: ghcr.io
   repo: java
-  GHCR_FULL_IMAGE: "${{ registry }}/${{ OWNER_LC }}/${{repo }}"
+  GHCR_FULL_IMAGE: "ghcr.io/${{ github.repository_owner }}/java"
 jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
