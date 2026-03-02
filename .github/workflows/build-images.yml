@@ -129,7 +129,7 @@ jobs:
           path: reports/${{ matrix.java_version }}/main.json
           retention-days: 1
   scan-images-and-generate-report:
-    needs: build-and-push
+    needs: [build-and-push, prepare-matrix]
     runs-on: ubuntu-latest
     permissions:
       contents: read
