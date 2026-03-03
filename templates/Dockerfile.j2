@@ -11,11 +11,11 @@ RUN cp /etc/passwd /rootfs/etc/passwd && \
 FROM {{ wolfi_base }} AS producer
 USER root
 
-RUN {{ 'jre_distroless' | setup_flavor(flavors) }}
+{{ 'jre_distroless' | setup_flavor(flavors) }}
 
-RUN {{ 'jre_standard' | setup_flavor(flavors) }}
+{{ 'jre_standard' | setup_flavor(flavors) }}
 
-RUN {{ 'jdk_standard' | setup_flavor(flavors) }}
+{{ 'jdk_standard' | setup_flavor(flavors) }}
 
 
 FROM {{ alpine }} AS fetcher
@@ -48,7 +48,6 @@ RUN rm -rf /opt/java-slim/jmods /opt/java-slim/lib/src.zip /opt/java-slim/demo /
 
 FROM cleaner AS fips-modifier
 USER root
-RUN apk add --no-cache curl
 
 COPY java.security /tmp/java.security
 
@@ -64,7 +63,6 @@ ADD --chmod=644 --checksum=sha256:{{ bouncycastle_util_fips_sha }} \
 ADD --chmod=644 --checksum=sha256:{{ bouncycastle_tls_fips_sha }} \
     {{ bouncycastle_tls_fips_url }} /tmp/bctls-fips.jar
 
-RUN curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
 RUN set -e; \
     {%- if version == '8' %}
@@ -78,11 +76,11 @@ if [ -d "/opt/java-slim/jre" ]; then \
     J_LIB_DIR="/opt/java-slim/lib/ext"; \
     fi; \
     {%- else %}
-CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
+    CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
     SEC_FILE="/opt/java-slim/conf/security/java.security"; \
     J_LIB_DIR="/opt/java-slim/lib"; \
     {%- endif %}
-/opt/java-slim/bin/keytool -importkeystore \
+    /opt/java-slim/bin/keytool -importkeystore \
     -srckeystore "$CACERTS_PATH" \
     -srcstorepass ${KEYSTORE_PWD} \
     -destkeystore /tmp/cacerts.bcfks \

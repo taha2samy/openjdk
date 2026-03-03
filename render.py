@@ -31,6 +31,8 @@ def load_data():
     return context, flavors
 
 
+
+
 def setup_flavor_filter(f_id, flavors_dict):
     spec = flavors_dict.get(f_id)
     if not spec: return ""
@@ -42,39 +44,35 @@ def setup_flavor_filter(f_id, flavors_dict):
     unique_pkgs = list(dict.fromkeys(spec.get('packages', [])))
     pkgs_str = " ".join(unique_pkgs)
 
-    cmds = [f"mkdir -p {root}/etc/apk {root}/var/lib/apk"]
-
+    prep_cmds = [f"mkdir -p {root}/etc/apk {root}/var/lib/apk"]
     if opt.get('has_package_manager'):
-        cmds.append(f"cp -a /etc/apk/repositories /etc/apk/keys {root}/etc/apk/")
+        prep_cmds.append(f"cp -a /etc/apk/repositories /etc/apk/keys {root}/etc/apk/")
+    
+    run_prep = f"RUN {' && '.join(prep_cmds)}"
 
-    apk_cmd = (
+    main_cmds = []
+    main_cmds.append(
         f"apk add --initdb --no-scripts --root {root} "
         f"--cache-dir {cache_path} "
         f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs_str}"
     )
-    cmds.append(apk_cmd)
 
     if opt.get('use_ldconfig'):
-        cmds.append(f"ldconfig -r {root}")
+        main_cmds.append(f"ldconfig -r {root}")
 
     if opt.get('has_shell'):
-        # Creating relative symlinks directly without using 'cd'
         busybox_setup = (
             f"for a in $({root}/usr/bin/busybox --list); do "
             f"ln -sf busybox {root}/usr/bin/$a; done && "
             f"ln -sf busybox {root}/usr/bin/sh"
         )
-        cmds.append(busybox_setup)
+        main_cmds.append(busybox_setup)
 
-    full_cmd = " && ".join(cmds)
+    cache_mount = f"--mount=type=cache,id=wolfi-apk,target={cache_path} " if opt.get('use_cache') else ""
     
-    # Prepend KICS ignore and handle cache mount
-    kics_ignore = "# kics-scan ignore-line\n"
-    if opt.get('use_cache'):
-        return f"{kics_ignore}RUN --mount=type=cache,id=wolfi-apk,target={cache_path} {full_cmd}"
+    run_main = f"# kics-scan ignore-line\nRUN {cache_mount}{' && '.join(main_cmds)}"
 
-    return f"{kics_ignore}RUN {full_cmd}"
-    
+    return f"{run_prep}\n{run_main}"
 def render_all():
     context, flavors_cfg = load_data()
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
