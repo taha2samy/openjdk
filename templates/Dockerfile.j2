@@ -88,6 +88,8 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD ["/opt/java/bin/jcmd", "-l"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -107,6 +109,8 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -125,6 +129,8 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% else %}
 ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]
