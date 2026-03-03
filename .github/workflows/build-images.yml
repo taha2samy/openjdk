@@ -217,7 +217,7 @@ jobs:
               "id": "${{ steps.attest_sbom.outputs.attestation-id }}",
               "url": "${{ steps.attest_sbom.outputs.attestation-url }}"
             }
-          }' > ${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}_attestation_details.json
+          }' > reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}_attestation_details.json
 
       - name: full-scan-image
         run: |
@@ -247,13 +247,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: scan-report-temp-*
-          path: final_reports
-          merge-multiple: true
-
-      - name: Download All Build Reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: build-report-java-*
           path: final_reports
           merge-multiple: true
 
