@@ -76,7 +76,7 @@ RUN set -e; \
     cp /tmp/java.security "$SEC_FILE" && \
     rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
 
-FROM scratch AS jdk_standard
+FROM scratch AS jdk-standard
 COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jdk_standard /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
@@ -94,7 +94,7 @@ USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
 
-FROM scratch AS jre_standard
+FROM scratch AS jre-standard
 COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_standard /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
@@ -109,7 +109,7 @@ USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
 
-FROM scratch AS jre_distroless
+FROM scratch AS jre-distroless
 COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_distroless /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
