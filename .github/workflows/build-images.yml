@@ -136,6 +136,7 @@ jobs:
       packages: write
 
     strategy:
+      fail-fast: false
       matrix:
         java_version:  ${{ fromJSON(needs.prepare-matrix.outputs.versions) }}
         image_type: [jdk, jre, distroless]
