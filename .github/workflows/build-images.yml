@@ -209,40 +209,40 @@ jobs:
           path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}
           retention-days: 1
 
-    merge-and-cleanup-reports:
-      needs: scan-images-and-generate-report
-      runs-on: ubuntu-latest
-      if: always()
-      permissions:
-        actions: write
-        contents: read
-      steps:
-        - name: Download All Scan Reports
-          uses: actions/download-artifact@v4
-          with:
-            pattern: scan-report-temp-*
-            path: final_reports
-            merge-multiple: true
+  merge-and-cleanup-reports:
+    needs: scan-images-and-generate-report
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Download All Scan Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: scan-report-temp-*
+          path: final_reports
+          merge-multiple: true
 
-        - name: Download All Build Reports
-          uses: actions/download-artifact@v4
-          with:
-            pattern: build-report-java-*
-            path: final_reports
-            merge-multiple: true
+      - name: Download All Build Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-report-java-*
+          path: final_reports
+          merge-multiple: true
 
-        - name: Delete All Temporary Artifacts
-          uses: geekyeggo/delete-artifact@v5
-          with:
-            name: "*"
-            failOnError: false
+      - name: Delete All Temporary Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: "*"
+          failOnError: false
 
-        - name: Upload Final Combined Security Report
-          uses: actions/upload-artifact@v4
-          with:
-            name: final-security-compliance-reports
-            path: final_reports
-            retention-days: 1
+      - name: Upload Final Combined Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-security-compliance-reports
+          path: final_reports
+          retention-days: 1
 
       # - name: Attest JRE (SLSA)
       #   if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
