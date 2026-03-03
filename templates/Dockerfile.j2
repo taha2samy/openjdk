@@ -101,8 +101,7 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/opt/java/bin/java", "-version"] || exit 1
-
+  CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -121,8 +120,7 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/opt/java/bin/java", "-version"] || exit 1
-
+  CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -141,8 +139,7 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/opt/java/bin/java", "-version"] || exit 1
-
+  CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]
