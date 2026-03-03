@@ -131,6 +131,7 @@ jobs:
       id-token: write
       attestations: write
       packages: write
+      security-events: write
 
     strategy:
       fail-fast: false
@@ -183,13 +184,23 @@ jobs:
       - name: Upload SBOM to Dependency Graph
         run: |
           task gh:upload-sbom \
-            FILE=${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json \
+            FILE=reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json \
             TARGET=java-${{ matrix.java_version }}-${{ matrix.image_type }}.sbom \
             REPO=${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref }}
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34  # v3
+        id: attest_sbom
+        with:
+          subject-name: ${{ env.ghcr_image }}
+          subject-digest: ${{ steps.set_digest.outputs.digest }}
+          sbom-path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json
+          push-to-registry: true
+          show-summary: false
 
       - name: full-scan-image
         run: |
