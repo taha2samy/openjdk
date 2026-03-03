@@ -133,6 +133,7 @@ jobs:
       id-token: write
       attestations: write
       actions: write
+      packages: write
 
     strategy:
       matrix:
