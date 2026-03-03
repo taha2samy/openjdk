@@ -225,30 +225,28 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: "scan-report-temp-*.json"
-          path: final_reports
+          path: reports/
           merge-multiple: true
       - name: Download All Scan Reports
         uses: actions/download-artifact@v4
         with:
           pattern: "build-report-*.json"
-          path: final_reports
+          path: reports/
           merge-multiple: true
 
-      - name: Display Structure (Optional Debug)
-        run: ls -R final_reports
 
       - name: Delete Temporary Scan Artifacts
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: scan-report-temp-*
+          name: "*"
           failOnError: false
 
       - name: Upload Final Combined Security Report
         uses: actions/upload-artifact@v4
         with:
           name: final-security-compliance-reports
-          path: final_reports
-          retention-days: 5
+          path: reports/
+          retention-days: 1
 
 
 
