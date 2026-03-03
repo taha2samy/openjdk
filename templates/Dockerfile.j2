@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.6
+
 FROM {{ wolfi_base }} AS helper
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
 RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo /rootfs/etc/apk /rootfs/etc/apk/keys
@@ -7,37 +8,14 @@ RUN cp /etc/passwd /rootfs/etc/passwd && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
     echo "UTC" > /rootfs/etc/timezone
 
-
 FROM {{ wolfi_base }} AS producer
 USER root
 
-RUN mkdir -p /rootfs/jre_distroless && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jre_distroless \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %} 
+RUN {{ 'jre_distroless' | setup_flavor(flavors) }}
 
-RUN mkdir -p /rootfs/jre_standard/etc/apk && \
-    cp -a /etc/apk/keys /etc/apk/repositories /rootfs/jre_standard/etc/apk/ && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jre_standard \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %}
+RUN {{ 'jre_standard' | setup_flavor(flavors) }}
 
-RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jre_standard/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jre_standard/usr/bin/sh
-
-RUN mkdir -p /rootfs/jdk_standard/etc/apk && \
-    cp -a /etc/apk/keys /etc/apk/repositories /rootfs/jdk_standard/etc/apk/ && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk_standard \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jdk_standard.packages %}{{ pkg }} {% endfor %}
-
-RUN for applet in $(/rootfs/jdk_standard/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jdk_standard/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jdk_standard/usr/bin/sh
-
-
-
+RUN {{ 'jdk_standard' | setup_flavor(flavors) }}
 
 
 FROM {{ alpine }} AS fetcher
@@ -113,8 +91,8 @@ CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
     rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
 
 FROM scratch AS jdk-standard
-COPY --from=producer /rootfs/jdk-standard /
-COPY --from=helper /rootfs /etc/passwd /rootfs/etc/group /rootfs/etc/nsswitch.conf /rootfs/etc/timezone /
+COPY --from=producer /rootfs/jdk_standard /
+COPY --from=helper /rootfs /
 COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 {% if version == '8' %}
@@ -124,15 +102,13 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 LABEL org.opencontainers.image.authors="taha2samy" \
     org.opencontainers.image.vendor="taha2samy" \
-    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
+    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - jdk-standard" \
     org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
     org.opencontainers.image.version="{{ full_ver }}" \
     org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
     org.opencontainers.image.licenses="Apache-2.0" \
     java.version="{{ version }}" \
     java.full_version="{{ full_ver }}" \
-    java.flavor="{{ flavor_name }}" \
-    java.type="{{ java_type }}" \
     security.fips="enabled" \
     os.base="wolfi-os"
 USER java
@@ -151,15 +127,13 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 LABEL org.opencontainers.image.authors="taha2samy" \
     org.opencontainers.image.vendor="taha2samy" \
-    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
+    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - jre-standard" \
     org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
     org.opencontainers.image.version="{{ full_ver }}" \
     org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
     org.opencontainers.image.licenses="Apache-2.0" \
     java.version="{{ version }}" \
     java.full_version="{{ full_ver }}" \
-    java.flavor="{{ flavor_name }}" \
-    java.type="{{ java_type }}" \
     security.fips="enabled" \
     os.base="wolfi-os"
 USER java
@@ -179,15 +153,13 @@ ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncyca
 {% endif %}
 LABEL org.opencontainers.image.authors="taha2samy" \
     org.opencontainers.image.vendor="taha2samy" \
-    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
+    org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - jre-distroless" \
     org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
     org.opencontainers.image.version="{{ full_ver }}" \
     org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
     org.opencontainers.image.licenses="Apache-2.0" \
     java.version="{{ version }}" \
     java.full_version="{{ full_ver }}" \
-    java.flavor="{{ flavor_name }}" \
-    java.type="{{ java_type }}" \
     security.fips="enabled" \
     os.base="wolfi-os"
 USER java

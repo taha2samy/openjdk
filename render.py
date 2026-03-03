@@ -30,10 +30,48 @@ def load_data():
         flavors = yaml.safe_load(f)
     return context, flavors
 
+def setup_flavor_filter(f_id, flavors_dict):
+    spec = flavors_dict.get(f_id)
+    if not spec:
+        return ""
+
+    options = spec.get('options', {})
+    root = f"/rootfs/{f_id}"
+    use_cache = options.get('use_cache', False)
+    
+    mount_flag = "--mount=type=cache,target=/var/cache/apk " if use_cache else ""
+    apk_cache_flag = "" if use_cache else "--no-cache "
+    pkgs = " ".join(spec.get('packages', []))
+
+    cmds = [f"mkdir -p {root}/var/lib/apk {root}/etc/apk"]
+
+    if options.get('has_package_manager'):
+        cmds.append(f"cp -a /etc/apk/repositories {root}/etc/apk/ && cp -a /etc/apk/keys {root}/etc/apk/")
+
+    cmds.append(
+        f"apk add {apk_cache_flag}--initdb --no-scripts --root {root} "
+        f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs}"
+    )
+
+    if options.get('has_shell'):
+        busybox_loop = (
+            f"for applet in $({root}/usr/bin/busybox --list); do "
+            f"ln -sf busybox {root}/usr/bin/$applet; done && "
+            f"ln -sf busybox {root}/usr/bin/sh"
+        )
+        cmds.append(busybox_loop)
+
+    return f"{mount_flag}{' && '.join(cmds)}"
+
+    
+    
 def render_all():
     context, flavors_cfg = load_data()
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    env.filters['setup_flavor'] = setup_flavor_filter
+
     source_packages = context.get("wolfi_packages", {})
     java_versions = context.get("java", {})
     image_flavors = flavors_cfg.get("image_flavors", {})

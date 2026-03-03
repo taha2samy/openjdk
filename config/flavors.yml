@@ -3,6 +3,8 @@ image_flavors:
     java_type: "jre"
     options:
       has_shell: false
+      has_package_manager: false
+      use_cache: true
     packages:
       - "glibc"
       - "zlib"
@@ -17,6 +19,8 @@ image_flavors:
     java_type: "jre"
     options:
       has_shell: true 
+      has_package_manager: true
+      use_cache: true
     packages:
       - "apk-tools"
       - "wolfi-keys"
@@ -35,6 +39,8 @@ image_flavors:
     java_type: "jdk"
     options:
       has_shell: true
+      has_package_manager: true
+      use_cache: true
     packages:
       - "apk-tools"
       - "wolfi-keys"
