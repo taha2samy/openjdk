@@ -118,7 +118,6 @@ ENTRYPOINT []
 FROM scratch AS stage_aggregator_for_jre
 COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_distroless /
-`
 FROM scratch AS jre_distroless
 COPY --from=stage_aggregator_for_jre /rootfs /
 COPY --from=fips-modifier /opt/jre /opt/java
