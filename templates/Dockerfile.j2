@@ -24,7 +24,7 @@ ARG TARGETARCH
 ADD --checksum=sha256:{{ jdk_amd64_sha }} {{ jdk_amd64_url }} /tmp/jdk-amd64.tar.gz
 # kics-scan ignore-line
 ADD --checksum=sha256:{{ jdk_arm64_sha }} {{ jdk_arm64_url }} /tmp/jdk-arm64.tar.gz
-RUN set -eux; apk add --no-cache tar={{ tar }}; \
+RUN set -eux; apk add --no-cache tar="1.35-r2"; \
     if [ "$TARGETARCH" = "amd64" ]; then SRC="/tmp/jdk-amd64.tar.gz"; else SRC="/tmp/jdk-arm64.tar.gz"; fi; \
     mkdir -p /opt/java-jdk; tar -xzf "$SRC" -C /opt/java-jdk --strip-components=1
 
@@ -34,7 +34,7 @@ ARG TARGETARCH
 ADD --checksum=sha256:{{ jre_amd64_sha }} {{ jre_amd64_url }} /tmp/jre-amd64.tar.gz
 # kics-scan ignore-line
 ADD --checksum=sha256:{{ jre_arm64_sha }} {{ jre_arm64_url }} /tmp/jre-arm64.tar.gz
-RUN set -eux; apk add --no-cache tar={{ tar }}; \
+RUN set -eux; apk add --no-cache tar="1.35-r2"; \
     if [ "$TARGETARCH" = "amd64" ]; then SRC="/tmp/jre-amd64.tar.gz"; else SRC="/tmp/jre-arm64.tar.gz"; fi; \
     mkdir -p /opt/java-jre; tar -xzf "$SRC" -C /opt/java-jre --strip-components=1
 
