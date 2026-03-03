@@ -23,7 +23,7 @@ ADD --checksum=sha256:{{ jdk_amd64_sha }} {{ jdk_amd64_url }} /tmp/java-amd64.ta
 # kics-scan ignore-line
 ADD --checksum=sha256:{{ jdk_arm64_sha }} {{ jdk_arm64_url }} /tmp/java-arm64.tar.gz
 RUN set -eux; \
-    apk add --no-cache tar="1.35-r5"; \
+    apk add --no-cache tar="1.35-r2"; \
     if [ "$TARGETARCH" = "amd64" ]; then JAVA_SOURCE="/tmp/java-amd64.tar.gz"; \
     else JAVA_SOURCE="/tmp/java-arm64.tar.gz"; fi; \
     mkdir -p /opt/java-full; \
