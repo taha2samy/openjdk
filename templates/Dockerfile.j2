@@ -73,8 +73,8 @@ RUN set -e; \
     done
 
 FROM scratch AS jdk_standard
-COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jdk_standard /
+COPY --from=helper /rootfs / \
+     --from=producer /rootfs/jdk_standard /
 COPY --from=fips-modifier /opt/jdk /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
@@ -88,8 +88,8 @@ WORKDIR /home/java
 ENTRYPOINT []
 
 FROM scratch AS jre_standard
-COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jre_standard /
+COPY --from=helper /rootfs / \ \
+     --from=producer /rootfs/jre_standard / 
 COPY --from=fips-modifier /opt/jre /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
@@ -103,8 +103,8 @@ WORKDIR /home/java
 ENTRYPOINT []
 
 FROM scratch AS jre_distroless
-COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jre_distroless /
+COPY --from=helper /rootfs/ / \
+     --from=producer /rootfs/jre_distroless/ /
 COPY --from=fips-modifier /opt/jre /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 TZ=UTC
 ARG KEYSTORE_PWD=changeit
