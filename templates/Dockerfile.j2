@@ -75,16 +75,17 @@ RUN set -e; \
 
 
 FROM scratch AS base_jdk_standard
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jdk_standard /
+COPY --from=helper /rootfs /
 
 FROM scratch AS base_jre_standard
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_standard /
+COPY --from=helper /rootfs /
 
 FROM scratch AS base_jre_distroless
-COPY --from=helper /rootfs /
 COPY --from=producer /rootfs/jre_distroless /
+COPY --from=helper /rootfs /
+
 
 
 # --- Image 1: JDK Standard ---
