@@ -81,6 +81,6 @@ tasks:
               "jre": $jre,
               "distroless": $distro
             }
-          }' > reports/{{.VERSION}}/main.json
-      - echo "✅ Report generated at reports/{{.VERSION}}/main.json"
+          }' > reports/{{.VERSION}}/main-{{.VERSION}}.json
+      - echo "✅ Report generated at reports/{{.VERSION}}/main-{{.VERSION}}.json"
     silent: true
