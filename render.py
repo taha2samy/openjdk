@@ -32,39 +32,35 @@ def load_data():
 
 def setup_flavor_filter(f_id, flavors_dict):
     spec = flavors_dict.get(f_id)
-    if not spec:
-        return ""
+    if not spec: return ""
 
-    options = spec.get('options', {})
+    opt = spec.get('options', {})
     root = f"/rootfs/{f_id}"
-    use_cache = options.get('use_cache', False)
-    
-    mount_flag = "--mount=type=cache,target=/var/cache/apk " if use_cache else ""
-    apk_cache_flag = "" if use_cache else "--no-cache "
     pkgs = " ".join(spec.get('packages', []))
 
-    cmds = [f"mkdir -p {root}/var/lib/apk {root}/etc/apk"]
+    cmds = [f"mkdir -p {root}/etc/apk"]
 
-    if options.get('has_package_manager'):
-        cmds.append(f"cp -a /etc/apk/repositories {root}/etc/apk/ && cp -a /etc/apk/keys {root}/etc/apk/")
+    if opt.get('has_package_manager'):
+        cmds.append(f"cp /etc/apk/repositories {root}/etc/apk/")
 
     cmds.append(
-        f"apk add {apk_cache_flag}--initdb --no-scripts --root {root} "
+        f"apk add --initdb --no-scripts --root {root} "
         f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs}"
     )
 
-    if options.get('has_shell'):
-        busybox_loop = (
-            f"for applet in $({root}/usr/bin/busybox --list); do "
-            f"ln -sf busybox {root}/usr/bin/$applet; done && "
+    if opt.get('has_shell'):
+        cmds.append(
+            f"for a in $({root}/usr/bin/busybox --list); do "
+            f"ln -sf busybox {root}/usr/bin/$a; done && "
             f"ln -sf busybox {root}/usr/bin/sh"
         )
-        cmds.append(busybox_loop)
 
-    return f"{mount_flag}{' && '.join(cmds)}"
+    full_cmd = " && ".join(cmds)
 
-    
-    
+    if opt.get('use_cache'):
+        return f"--mount=type=cache,id=wolfi-apk,target=/var/cache/apk {full_cmd}"
+
+    return full_cmd    
 def render_all():
     context, flavors_cfg = load_data()
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
