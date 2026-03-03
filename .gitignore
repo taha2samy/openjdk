@@ -1,5 +1,6 @@
 
 
+.trivycache/
 versions/21/*
 versions/8/*
 versions/11/*
@@ -16,3 +17,4 @@ versions/*/Dockerfile
 versions/*/java.security
 versions/*/build.hcl
 versions/*/Dockerfile
+REPORT/*
