@@ -109,21 +109,16 @@ tasks:
         vars: { IMAGE: "{{.IMAGE}}", REPORT_ID: "{{.REPORT_ID}}", OS: "{{.OS}}" }
 
 
-
   scan-kics:
     desc: "Run KICS scan with dynamic path handling"
     cmds:
       - sed -i 's/- "/- "\/path\//g' kics.yaml
+      - mv .gitignore justTempGitignore
 
       - |
-        docker run --rm \
-          -v "$PWD":/path \
-          -w /path \
-          checkmarx/kics:latest scan \
+        docker run --rm -v "$PWD":/path checkmarx/kics:latest scan \
           -p /path \
-          --config /path/kics.yaml \
-          --output-path /path/reports \
-          --output-name kics-report || true   
-             
+          --config /path/kics.yaml || true
       - sed -i 's/\/path\///g' kics.yaml
+      - mv justTempGitignore .gitignore
       - echo "KICS scan finished. Config restored and reports cleaned."
