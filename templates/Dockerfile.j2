@@ -7,8 +7,6 @@ RUN cp /etc/passwd /rootfs/etc/passwd && \
     cp /etc/group /rootfs/etc/group && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
     echo "UTC" > /rootfs/etc/timezone && \
-    cp -r /usr/share/zoneinfo/UTC /rootfs/usr/share/zoneinfo/UTC && \
-    ln -sf /usr/share/zoneinfo/UTC /rootfs/etc/localtime && \
     chown 1001:1001 /rootfs/home/java && \
     chmod 1777 /rootfs/tmp
 
