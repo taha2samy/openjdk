@@ -1,0 +1,38 @@
+version: '3'
+
+tasks:
+  upload-sbom:
+    desc: "Uploads the SBOM to the dependency graph of github"
+    cmds:
+      - pipenv run python scripts/upload_sbom.py {{.FILE}} {{.TARGET}} {{.REPO}}
+    vars:
+      FILE: '{{default "" .FILE}}'
+      TARGET: '{{default "" .TARGET}}'
+      REPO: '{{default "" .REPO}}'
+
+  cleanup-workflows:
+    desc: "Robust cleanup of ALL GitHub Actions workflow runs history"
+    silent: true
+    cmds:
+      - echo "Fetching workflow runs for {{.owner}}/{{.repo_of_code}}..."
+      - |
+        gh run list --repo {{.owner}}/{{.repo_of_code}} --limit 100 --json databaseId --jq '.[].databaseId' \
+        | xargs -I {} gh run delete --repo {{.owner}}/{{.repo_of_code}} {}
+      - echo "Cleanup process initiated successfully."
+    preconditions:
+      - sh: command -v gh >/dev/null 2>&1
+        msg: "GitHub CLI (gh) is not installed."
+
+
+  cleanup-cache:
+    desc: "Deletes ALL GitHub Actions build caches to force a fresh build"
+    silent: true
+    cmds:
+      - echo "Scanning for caches in {{.owner}}/{{.repo_of_code}}..."
+      - |
+        gh cache delete --all --repo {{.owner}}/{{.repo_of_code}} || \
+        (gh cache list --repo {{.owner}}/{{.repo_of_code}} --limit 100 --json id --jq '.[].id' | xargs -n 1 -I {} gh cache delete --repo {{.owner}}/{{.repo_of_code}} {})
+      - echo "All remote caches have been purged."
+    preconditions:
+      - sh: command -v gh >/dev/null 2>&1
+        msg: "GitHub CLI (gh) is not installed."

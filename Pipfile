@@ -8,6 +8,7 @@ jinja2 = "*"
 pyyaml = "*"
 requests = "*"
 "ruamel.yaml" = "*"
+mkdocs-material = "*"
 
 [dev-packages]
 
