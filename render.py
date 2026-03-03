@@ -33,6 +33,58 @@ def load_data():
 
 
 
+def render_all():
+    context, flavors_cfg = load_data()
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    env.filters['setup_flavor'] = setup_flavor_filter
+
+    source_packages = context.get("wolfi_packages", {})
+    java_versions = context.get("java", {})
+    image_flavors = flavors_cfg.get("image_flavors", {})
+
+    for v_key, v_data in java_versions.items():
+        v_output_dir = os.path.join(OUTPUT_ROOT, v_key)
+        os.makedirs(v_output_dir, exist_ok=True)
+
+        flat_vars = {}
+        flat_vars.update(context.get('images', {}))
+        flat_vars.update(source_packages) # This makes {{ curl }} available directly
+        flat_vars.update(v_data)
+        
+        for k, v in context.items():
+            if k not in ['java', 'images', 'wolfi_packages']:
+                flat_vars[k] = v
+
+        resolved_flavors = {}
+        for f_name, f_spec in image_flavors.items():
+            flavor_pkgs = []
+            for pkg in f_spec.get("packages", []):
+                version = source_packages.get(pkg)
+                if version:
+                    flavor_pkgs.append(f"{pkg}={version}")
+                else:
+                    logger.warning(f"Package '{pkg}' skipped for flavor '{f_name}'")
+            
+            clean_name = f_name.replace("-", "_")
+            resolved_flavors[clean_name] = {
+                "name": f_name,
+                "java_type": f_spec.get("java_type"),
+                "options": f_spec.get("options", {}),
+                "packages": flavor_pkgs
+            }
+        
+        flat_vars["flavors"] = resolved_flavors
+
+        for src_tpl, out_name in RENDER_MAP.items():
+            try:
+                template = env.get_template(src_tpl)
+                content = template.render(**flat_vars)
+                with open(os.path.join(v_output_dir, out_name.strip()), 'w') as f:
+                    f.write(content)
+            except Exception as e:
+                logger.error(f"Failed to render {src_tpl}: {e}")
+    logger.info(f"✅ Render complete for {len(java_versions)} versions.")
+    
 def setup_flavor_filter(f_id, flavors_dict):
     spec = flavors_dict.get(f_id)
     if not spec: return ""
@@ -73,64 +125,6 @@ def setup_flavor_filter(f_id, flavors_dict):
     run_main = f"# kics-scan ignore-line\nRUN {cache_mount}{' && '.join(main_cmds)}"
 
     return f"{run_prep}\n{run_main}"
-def render_all():
-    context, flavors_cfg = load_data()
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-    
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-    env.filters['setup_flavor'] = setup_flavor_filter
-
-    source_packages = context.get("wolfi_packages", {})
-    java_versions = context.get("java", {})
-    image_flavors = flavors_cfg.get("image_flavors", {})
-
-    for v_key, v_data in java_versions.items():
-        v_output_dir = os.path.join(OUTPUT_ROOT, v_key)
-        os.makedirs(v_output_dir, exist_ok=True)
-
-        # 1. Flatten variables (Images, Java version data, BouncyCastle)
-        flat_vars = {}
-        flat_vars.update(context.get('images', {}))
-        flat_vars.update(v_data)
-        
-        # Inject global keys (like bouncycastle_fips_sha etc.)
-        for k, v in context.items():
-            if k not in ['java', 'images', 'wolfi_packages']:
-                flat_vars[k] = v
-
-        # 2. Process Flavors
-        resolved_flavors = {}
-        for f_name, f_spec in image_flavors.items():
-            
-            flavor_pkgs = []
-            for pkg in f_spec.get("packages", []):
-                version = source_packages.get(pkg)
-                if version:
-                    flavor_pkgs.append(f"{pkg}={version}")
-                else:
-                    logger.warning(f"Package '{pkg}' skipped for flavor '{f_name}' (No version found in context)")
-            
-            clean_name = f_name.replace("-", "_")
-            resolved_flavors[clean_name] = {
-                "name": f_name,
-                "java_type": f_spec.get("java_type"),
-                "options": f_spec.get("options", {}),
-                "packages": flavor_pkgs
-            }
-        
-        flat_vars["flavors"] = resolved_flavors
-
-        # 3. Final Render
-        for src_tpl, out_name in RENDER_MAP.items():
-            try:
-                template = env.get_template(src_tpl)
-                content = template.render(**flat_vars)
-                with open(os.path.join(v_output_dir, out_name.strip()), 'w') as f:
-                    f.write(content)
-            except Exception as e:
-                logger.error(f"Failed to render {src_tpl}: {e}")
-
-    logger.info(f"✅ Render complete for {len(java_versions)} versions.")
 
 if __name__ == "__main__":
     if os.path.exists(OUTPUT_ROOT):
