@@ -186,16 +186,16 @@ jobs:
           upload-artifact: false
           dependency-snapshot: false
 
-      - name: Upload SBOM to Dependency Graph
-        run: |
-          task gh:upload-sbom \
-            FILE=${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json \
-            TARGET=${{ matrix.java_version }}-${{ matrix.image_type }}.sbom \
-            REPO=${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REF: ${{ github.ref }}
+      # - name: Upload SBOM to Dependency Graph
+      #   run: |
+      #     task gh:upload-sbom \
+      #       FILE=${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json \
+      #       TARGET=${{ matrix.java_version }}-${{ matrix.image_type }}.sbom \
+      #       REPO=${{ github.repository }}
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     GITHUB_SHA: ${{ github.sha }}
+      #     GITHUB_REF: ${{ github.ref }}
       - name: full-scan-image
         run: |
           task scan-compliance:full-compliance \
