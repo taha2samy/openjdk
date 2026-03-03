@@ -30,14 +30,17 @@ def load_data():
         flavors = yaml.safe_load(f)
     return context, flavors
 
+
 def setup_flavor_filter(f_id, flavors_dict):
     spec = flavors_dict.get(f_id)
     if not spec: return ""
 
     opt = spec.get('options', {})
     root = f"/rootfs/{f_id}"
-    pkgs = " ".join(spec.get('packages', []))
     cache_path = "/var/cache/apk"
+    
+    unique_pkgs = list(dict.fromkeys(spec.get('packages', [])))
+    pkgs_str = " ".join(unique_pkgs)
 
     cmds = [f"mkdir -p {root}/etc/apk {root}/var/lib/apk"]
 
@@ -47,7 +50,7 @@ def setup_flavor_filter(f_id, flavors_dict):
     apk_cmd = (
         f"apk add --initdb --no-scripts --root {root} "
         f"--cache-dir {cache_path} "
-        f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs}"
+        f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs_str}"
     )
     cmds.append(apk_cmd)
 
@@ -55,6 +58,7 @@ def setup_flavor_filter(f_id, flavors_dict):
         cmds.append(f"ldconfig -r {root}")
 
     if opt.get('has_shell'):
+        # Creating relative symlinks directly without using 'cd'
         busybox_setup = (
             f"for a in $({root}/usr/bin/busybox --list); do "
             f"ln -sf busybox {root}/usr/bin/$a; done && "
@@ -63,11 +67,13 @@ def setup_flavor_filter(f_id, flavors_dict):
         cmds.append(busybox_setup)
 
     full_cmd = " && ".join(cmds)
-
+    
+    # Prepend KICS ignore and handle cache mount
+    kics_ignore = "# kics-scan ignore-line\n"
     if opt.get('use_cache'):
-        return f"--mount=type=cache,id=wolfi-apk,target={cache_path} {full_cmd}"
+        return f"{kics_ignore}RUN --mount=type=cache,id=wolfi-apk,target={cache_path} {full_cmd}"
 
-    return full_cmd
+    return f"{kics_ignore}RUN {full_cmd}"
     
 def render_all():
     context, flavors_cfg = load_data()

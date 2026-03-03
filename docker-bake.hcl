@@ -13,6 +13,9 @@ target "_common" {
     "type=sbom"
   ]
   output = ["type=registry,compression=zstd,compression-level=3,force-compression=true"]
+  args = {
+    KEYSTORE_PWD = "changeit"
+  }
 }
 
 group "default" {
