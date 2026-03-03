@@ -72,9 +72,14 @@ RUN set -e; \
         cp /tmp/java.security "$SEC_FILE"; \
     done
 
+
+FROM scratch AS stage_aggregator_for_jdk
+COPY --from=helper /rootfs /
+COPY --from=producer /rootfs/jdk_standard /
+
+
 FROM scratch AS jdk_standard
-COPY --from=helper /rootfs / \
-     --from=producer /rootfs/jdk_standard /
+COPY --from=stage_aggregator_for_jdk /rootfs /
 COPY --from=fips-modifier /opt/jdk /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
@@ -87,9 +92,13 @@ USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
 
+
+FROM scratch AS stage_aggregator_for_jre
+COPY --from=helper /rootfs /
+COPY --from=producer /rootfs/jre_standard /
+
 FROM scratch AS jre_standard
-COPY --from=helper /rootfs / \ \
-     --from=producer /rootfs/jre_standard/ / 
+COPY --from=stage_aggregator_for_jre /rootfs /
 COPY --from=fips-modifier /opt/jre /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
@@ -102,9 +111,12 @@ USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
 
+FROM scratch AS stage_aggregator_for_jre
+COPY --from=helper /rootfs /
+COPY --from=producer /rootfs/jre_distroless /
+`
 FROM scratch AS jre_distroless
-COPY --from=helper /rootfs/ / \
-     --from=producer /rootfs/jre_distroless/ /
+COPY --from=stage_aggregator_for_jre /rootfs /
 COPY --from=fips-modifier /opt/jre /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 TZ=UTC
 ARG KEYSTORE_PWD=changeit
