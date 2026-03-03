@@ -89,7 +89,7 @@ ENTRYPOINT []
 
 FROM scratch AS jre_standard
 COPY --from=helper /rootfs / \ \
-     --from=producer /rootfs/jre_standard / 
+     --from=producer /rootfs/jre_standard/ / 
 COPY --from=fips-modifier /opt/jre /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
