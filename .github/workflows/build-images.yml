@@ -170,7 +170,7 @@ jobs:
           push-to-registry: true
 
       - name: Explicit Pull Image
-        run: docker pull ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }}
+        run: docker pull ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }} && mkdir -p reports/${{ matrix.java_version }}/${{ matrix.image_type }}
 
       - name: Generate SBOM (CycloneDX)
         id: generate_sbom
@@ -178,7 +178,7 @@ jobs:
         with:
           image: ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }}
           format: cyclonedx-json
-          output-file: ${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json
+          output-file: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json
           upload-artifact: false
           dependency-snapshot: false
 
@@ -217,7 +217,7 @@ jobs:
               "id": "${{ steps.attest_sbom.outputs.attestation-id }}",
               "url": "${{ steps.attest_sbom.outputs.attestation-url }}"
             }
-          }' > ${{ matrix.java_version }}-${{ matrix.image_type }}_{_attestation_details.json
+          }' > ${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}_attestation_details.json
 
       - name: full-scan-image
         run: |
