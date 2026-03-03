@@ -37,30 +37,38 @@ def setup_flavor_filter(f_id, flavors_dict):
     opt = spec.get('options', {})
     root = f"/rootfs/{f_id}"
     pkgs = " ".join(spec.get('packages', []))
+    cache_path = "/var/cache/apk"
 
-    cmds = [f"mkdir -p {root}/etc/apk"]
+    cmds = [f"mkdir -p {root}/etc/apk {root}/var/lib/apk"]
 
     if opt.get('has_package_manager'):
-        cmds.append(f"cp /etc/apk/repositories {root}/etc/apk/")
+        cmds.append(f"cp -a /etc/apk/repositories /etc/apk/keys {root}/etc/apk/")
 
-    cmds.append(
+    apk_cmd = (
         f"apk add --initdb --no-scripts --root {root} "
+        f"--cache-dir {cache_path} "
         f"--keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories {pkgs}"
     )
+    cmds.append(apk_cmd)
+
+    if opt.get('use_ldconfig'):
+        cmds.append(f"ldconfig -r {root}")
 
     if opt.get('has_shell'):
-        cmds.append(
+        busybox_setup = (
             f"for a in $({root}/usr/bin/busybox --list); do "
             f"ln -sf busybox {root}/usr/bin/$a; done && "
             f"ln -sf busybox {root}/usr/bin/sh"
         )
+        cmds.append(busybox_setup)
 
     full_cmd = " && ".join(cmds)
 
     if opt.get('use_cache'):
-        return f"--mount=type=cache,id=wolfi-apk,target=/var/cache/apk {full_cmd}"
+        return f"--mount=type=cache,id=wolfi-apk,target={cache_path} {full_cmd}"
 
-    return full_cmd    
+    return full_cmd
+    
 def render_all():
     context, flavors_cfg = load_data()
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))

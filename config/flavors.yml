@@ -5,6 +5,7 @@ image_flavors:
       has_shell: false
       has_package_manager: false
       use_cache: true
+      use_ldconfig: true
     packages:
       - "glibc"
       - "zlib"
@@ -21,6 +22,7 @@ image_flavors:
       has_shell: true 
       has_package_manager: true
       use_cache: true
+      use_ldconfig: true
     packages:
       - "apk-tools"
       - "wolfi-keys"
@@ -41,6 +43,7 @@ image_flavors:
       has_shell: true
       has_package_manager: true
       use_cache: true
+      use_ldconfig: true
     packages:
       - "apk-tools"
       - "wolfi-keys"
