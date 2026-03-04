@@ -268,7 +268,7 @@ jobs:
 
 
   merge-and-cleanup-reports:
-    needs: scan-images-and-generate-report
+    needs: [scan-images-and-generate-report, kics-scan]
     runs-on: ubuntu-latest
     permissions:
       actions: write
