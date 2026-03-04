@@ -255,26 +255,12 @@ jobs:
         with:
           name: "*"
           failOnError: false
-
+      - name: Generate Docs 
+        run: |
+          task docs:build-MkDocs-site
       - name: Upload Final Combined Security Report
         uses: actions/upload-artifact@v4
         with:
           name: final-security-compliance-reports
           path: final_reports
           retention-days: 1
-
-      # - name: Attest JRE (SLSA)
-      #   if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
-      #   uses:  actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
-      #   with:
-      #     subject-name: ${{ env.ghcr_image }}
-      #     subject-digest: ${{ steps.digests.outputs.jre }}
-      #     push-to-registry: true
-
-      # - name: Attest Distroless (SLSA)
-      #   if: steps.digests.outputs.distro != 'null' && steps.digests.outputs.distro != ''
-      #   uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
-      #   with:
-      #     subject-name: ${{ env.ghcr_image }}
-      #     subject-digest: ${{ steps.digests.outputs.distro }}
-      #     push-to-registry: true
