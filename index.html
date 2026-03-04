@@ -522,6 +522,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cryptographic-guardrails-fips-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cryptographic Guardrails &amp; FIPS Enforcement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cryptographic Guardrails &amp; FIPS Enforcement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection Proof
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -895,19 +923,19 @@ A secure, zero-CVE, and fully FIPS 140-3 compliant Java environment built for mo
 <p>The following logs confirm that <strong>Bouncy Castle JSSE</strong> is handling the TLS handshake and verifying the <strong>BCFKS TrustStore</strong> integrity.</p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>--- FIPS TLS Handshake Test ---
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSecurityProperty
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Mar 04, 2026 9:15:15 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSecurityProperty
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>INFO: Found boolean security property [keystore.type.compat]: false
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Mar 04, 2026 9:15:15 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>INFO: Found string system property [javax.net.ssl.trustStore]: /opt/java/lib/security/cacerts
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>Mar 04, 2026 9:15:15 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>INFO: Found string system property [javax.net.ssl.trustStoreType]: BCFKS
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getSensitiveStringSystemProperty
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>Mar 04, 2026 9:15:15 PM org.bouncycastle.jsse.provider.PropertyUtils getSensitiveStringSystemProperty
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>INFO: Found sensitive string system property [javax.net.ssl.trustStorePassword]
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSystemProperty
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>INFO: Found boolean system property [org.bouncycastle.jsse.trustManager.checkEKU]: false
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Mar 04, 2026 9:15:15 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSystemProperty
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>INFO: Found boolean system property [org.bouncycastle.jsse.trustManager.checkEKU]: true
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>Mar 04, 2026 9:15:16 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
 <a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>INFO: Found string security property [jdk.tls.disabledAlgorithms]: SSLv3, TLSv1, TLSv1.1, RC4, DES, 3DES_EDE_CBC, TDEA, MD5, NULL, anon, ECDH, DH keySize &lt; 2048, RSA keySize &lt; 2048
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>Mar 04, 2026 9:15:16 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>INFO: Found string security property [jdk.certpath.disabledAlgorithms]: MD2, MD5, SHA1 keySize &lt; 1024, RSA keySize &lt; 2048, DSA keySize &lt; 2048, EC keySize &lt; 224
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>Connecting to Adoptium via Secure TLS...
 <a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>Response Status: 200
@@ -920,6 +948,28 @@ A secure, zero-CVE, and fully FIPS 140-3 compliant Java environment built for mo
 </div>
 </div>
 </div>
+<hr />
+<h2 id="cryptographic-guardrails-fips-enforcement"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5zm3.08 15L12 14.15 8.93 16l.81-3.5-2.71-2.34 3.58-.31L12 6.55l1.39 3.29 3.58.31-2.71 2.35z"/></svg></span> Cryptographic Guardrails &amp; FIPS Enforcement</h2>
+<p>To achieve <strong>FIPS 140-3</strong> compliance and Zero-Trust networking, this image enforces a "Hardened-by-Default" policy. Below is a breakdown of the security guardrails verified during the runtime trace:</p>
+<div class="admonition info">
+<p class="admonition-title">Security Policy Breakdown</p>
+<ul>
+<li><strong>Strict EKU Validation (<code>checkEKU: true</code>):</strong> 
+    We explicitly verify that the server's certificate is intended for <strong>Server Authentication</strong>. Any certificate lacking this metadata or used for the wrong purpose (e.g., a code-signing cert used for HTTPS) is rejected immediately to prevent impersonation attacks.</li>
+<li><strong>No Assumptions Policy (<code>assumeEKU: false</code>):</strong> 
+    Unlike standard Java distributions, we do not "assume" a certificate is valid if the Extended Key Usage (EKU) field is missing. This forces all internal and external services to use professionally issued, well-defined certificates.</li>
+<li><strong>FIPS-Approved KeyStore (<code>BCFKS</code>):</strong> 
+    The traditional <code>JKS</code> and <code>PKCS12</code> formats are bypassed for certificate management. We use the <strong>BCFKS</strong> (Bouncy Castle FIPS KeyStore) format, which uses FIPS-approved algorithms (like AES-CCM and SHA-512) to protect your root certificates (<code>cacerts</code>).</li>
+<li><strong>Algorithm Blacklisting:</strong> 
+    Weak protocols and ciphers are strictly disabled at the JVM level.<ul>
+<li><strong>Blocked Protocols:</strong> <code>SSLv3</code>, <code>TLSv1.0</code>, <code>TLSv1.1</code>.</li>
+<li><strong>Blocked Ciphers:</strong> <code>RC4</code>, <code>DES</code>, <code>3DES</code>, <code>MD5</code>, and <code>DH/RSA</code> keys smaller than 2048-bit.</li>
+</ul>
+</li>
+</ul>
+</div>
+<h3 id="connection-proof"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m23 12-2.44-2.78.34-3.68-3.61-.82-1.89-3.18L12 3 8.6 1.54 6.71 4.72l-3.61.81.34 3.68L1 12l2.44 2.78-.34 3.69 3.61.82 1.89 3.18L12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68zm-13 5-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9z"/></svg></span> Connection Proof</h3>
+<p>The runtime successfully established a <strong>TLS 1.3</strong> session with <code>adoptium.net</code> using only FIPS-approved primitives, confirming that your application can safely communicate with modern APIs without compromising its cryptographic boundary.</p>
 
 
 
