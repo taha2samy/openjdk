@@ -3,8 +3,8 @@ version: "3"
 includes:
   scan-compliance: tasks/Taskfile.scan-compliance.yml
   gh: tasks/taskfile.github.yml
+  docs: tasks/Taskfile.doc.yml
 
-  
 output:
   group:
     begin: '::group::{{.TASK}}'

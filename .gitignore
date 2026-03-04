@@ -11,7 +11,7 @@ reports/*
 templates/java-version-row.md.j2
 __pycache__
 versions/*/*.json
-
+/site/
 
 versions/*/Dockerfile
 versions/*/java.security

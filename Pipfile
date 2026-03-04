@@ -9,6 +9,8 @@ pyyaml = "*"
 requests = "*"
 "ruamel.yaml" = "*"
 mkdocs-material = "*"
+mkdocs-charts-plugin = "*"
+mkdocs-macros-plugin = "*"
 
 [dev-packages]
 
