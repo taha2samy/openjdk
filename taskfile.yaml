@@ -1,5 +1,11 @@
 version: "3"
-
+vars:
+  owner: "taha2samy"
+  registry: "ghcr.io"
+  repo_of_registry: "java"
+  repo_of_code: "openjdk"
+  repo_url: "https://github.com/{{.owner}}/{{.repo_of_code}}"
+  
 includes:
   scan-compliance: tasks/Taskfile.scan-compliance.yml
   gh: tasks/taskfile.github.yml
