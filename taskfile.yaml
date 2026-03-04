@@ -17,7 +17,7 @@ tasks:
       - pipenv run python scripts/github_action_ver_to_sha.py
     silent: true
 
-  resolve:
+  sync:
     desc: "Fetch and resolve all dependencies (Java, Images, Packages) and update context.json"
     cmds:
       - pipenv run python scripts/resolve_dependencies.py

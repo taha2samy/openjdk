@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("RENDERER")
 
 RENDER_MAP = {
-    "just.txt.j2": "just.txt",
     "Dockerfile.j2": "Dockerfile",
     "java.security.j2": "java.security",
     "build.hcl.j2": "build.hcl"
@@ -48,7 +47,7 @@ def render_all():
 
         flat_vars = {}
         flat_vars.update(context.get('images', {}))
-        flat_vars.update(source_packages) # This makes {{ curl }} available directly
+        flat_vars.update(source_packages) 
         flat_vars.update(v_data)
         
         for k, v in context.items():
