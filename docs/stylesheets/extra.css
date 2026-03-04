@@ -243,10 +243,6 @@
 
 
 
-
-
-
-
 .integration-stack {
     display: flex;
     align-items: center;
@@ -287,9 +283,6 @@
 
 .md-header {
     background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, var(--md-primary-fg-color--light) 100%) !important;
-    position: sticky;
-    top: 0;
-    z-index: 100;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -308,8 +301,6 @@
 
 .md-tabs {
     background: linear-gradient(135deg, var(--md-primary-fg-color--dark) 0%, var(--md-primary-fg-color) 100%) !important;
-    position: sticky;
-    top: 48px;
     z-index: 99;
 }
 
@@ -407,4 +398,32 @@
 .md-header-nav__button:active {
     transform: scale(0.90);
     transition: transform 0.1s ease;
+}
+
+.md-typeset .tabbed-labels>label {
+    color: var(--md-default-fg-color--light) !important;
+    font-weight: 500 !important;
+    transition: color 0.3s ease;
+}
+
+.md-typeset .tabbed-set>input:nth-of-type(1):checked~.tabbed-labels>label:nth-of-type(1),
+.md-typeset .tabbed-set>input:nth-of-type(2):checked~.tabbed-labels>label:nth-of-type(2),
+.md-typeset .tabbed-set>input:nth-of-type(3):checked~.tabbed-labels>label:nth-of-type(3),
+.md-typeset .tabbed-set>input:nth-of-type(4):checked~.tabbed-labels>label:nth-of-type(4),
+.md-typeset .tabbed-set>input:nth-of-type(5):checked~.tabbed-labels>label:nth-of-type(5) {
+    color: #ff9800 !important;
+    font-weight: 800 !important;
+}
+
+.md-typeset .tabbed-labels>label .twemoji svg {
+    fill: currentColor !important;
+}
+
+.md-typeset .tabbed-labels::before {
+    background-color: #ff9800 !important;
+}
+
+.md-typeset .tabbed-labels>label:hover {
+    color: #ff9800 !important;
+    opacity: 0.7;
 }

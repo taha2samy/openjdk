@@ -101,3 +101,57 @@ Select your target Java LTS version to explore available tags, immutable digests
     *Latest long-term support release for future-proofing.*
 
 </div>
+
+
+
+---
+
+## :material-console-line: Usage & Execution
+
+All images in this repository share a unified and streamlined execution model. The `ENTRYPOINT` is strictly set to `["/opt/java/bin/java"]`. This means the container behaves exactly like the native `java` executable—you simply pass your JVM arguments or `.jar` files directly.
+
+!!! tip "Zero-Config Strict FIPS 140-3 Enforcement"
+    You do not need to manually configure FIPS properties. We have injected the stringent security requirements directly into the image's environment via `JAVA_TOOL_OPTIONS`. 
+    
+    By default, the JVM runs with `-Dorg.bouncycastle.fips.approved_only=true`. This guarantees that if your application attempts to invoke a non-compliant cryptographic algorithm (e.g., `MD5` or `DES`), the Bouncy Castle provider will **explicitly block it and throw a runtime exception**, ensuring 100% cryptographic compliance without altering your application code.
+
+
+### :material-code-tags: Implementation Examples
+
+=== ":material-docker: Direct CLI Execution"
+
+    Because the `ENTRYPOINT` is already set to `java`, you can test your compiled `.jar` files or check JVM properties directly from your terminal.
+
+    ```bash
+    # 1. Verify injected FIPS properties and Java version
+    docker run --rm ghcr.io/taha2samy/java:21-jre_distroless -XshowSettings:properties -version
+
+    # 2. Run a local application by mounting the volume
+    docker run --rm -v $(pwd):/app -w /app ghcr.io/taha2samy/java:21-jre_standard -jar my-secure-app.jar
+    ```
+
+=== ":material-file-code-outline: Multi-Stage Dockerfile"
+
+    This is the recommended approach for Production. Use the **Development SDK** (`jdk_standard`) to compile your code, and the **Production Distroless** (`jre_distroless`) to run it.
+
+    ```dockerfile
+    # Stage 1: Build Environment
+    FROM ghcr.io/taha2samy/java:21-jdk_standard AS builder
+    WORKDIR /build
+    COPY . .
+    # The shell and package manager are available here
+    RUN ./mvnw clean package -DskipTests
+
+    # Stage 2: Production Distroless Runtime
+    FROM ghcr.io/taha2samy/java:21-jre_distroless
+    
+    # Run as a non-privileged user (Enforced by default)
+    USER 1001
+    WORKDIR /app
+    
+    COPY --from=builder /build/target/secure-app.jar /app.jar
+
+    # We only need to provide the CMD arguments.
+    # The ENTRYPOINT ["/opt/java/bin/java"] is seamlessly inherited.
+    CMD ["-Xmx512m", "-jar", "/app.jar"]
+    ```

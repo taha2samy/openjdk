@@ -1,5 +1,5 @@
 import json
-repo_of_registry="ghcr.io/taha2samy/openjdk"
+repo_of_registry="ghcr.io/taha2samy/java"
 
 
 def loadjson(path):
