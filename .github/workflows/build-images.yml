@@ -118,8 +118,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: build-report-java-${{ matrix.java_version }}
-          path: reports/${{ matrix.java_version }}/main-${{ matrix.java_version 
-            }}.json
+          path: reports/${{ matrix.java_version }}/main-${{ matrix.java_version }}.json
           retention-days: 1
 
 
@@ -183,9 +182,7 @@ jobs:
           image: ghcr.io/${{ github.repository_owner }}/java@${{ 
             steps.get-digest.outputs.digest }}
           format: cyclonedx-json
-          output-file: reports/${{ matrix.java_version }}/${{ matrix.image_type 
-            }}/${{ matrix.java_version }}-${{ matrix.image_type 
-            }}.cyclonedx.json
+          output-file: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type}}.cyclonedx.json
           upload-artifact: false
           dependency-snapshot: false
 
@@ -206,9 +203,7 @@ jobs:
         with:
           subject-name: ${{ env.ghcr_image }}
           subject-digest: ${{ steps.get-digest.outputs.digest }}
-          sbom-path: reports/${{ matrix.java_version }}/${{ matrix.image_type 
-            }}/${{ matrix.java_version }}-${{ matrix.image_type 
-            }}.cyclonedx.json
+          sbom-path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type}}.cyclonedx.json
           push-to-registry: true
           show-summary: false
 
@@ -245,6 +240,33 @@ jobs:
           path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}
           retention-days: 1
 
+  kics-scan:
+    needs: [build-and-push, prepare-matrix]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 
+      - name: remove .gitignore
+        run: rm .gitignore
+      - name: Run KICS Scan
+        uses: 
+          checkmarx/kics-github-action@00def9108246ec656aea725db2167522d26a99d2  # v2.1.19
+        with:
+          path: '.'
+          config_path: './kics.yaml'
+          output_path: 'reports/'
+          output_formats: 'json,sarif'
+          ignore_on_exit: results
+      - name: Upload KICS Reports
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: scan-report-temp-kics
+          path: reports/
+          retention-days: 1
+
+
   merge-and-cleanup-reports:
     needs: scan-images-and-generate-report
     runs-on: ubuntu-latest
@@ -265,6 +287,7 @@ jobs:
           pattern: scan-report-temp-*
           path: reports
           merge-multiple: true
+
 
       - name: Delete All Temporary Artifacts
         uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b  # v5
@@ -288,29 +311,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
-      # - name: clean registry
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     OWNER: ${{ github.repository_owner }}
-      #     IMAGE_NAME: ${{ env.ghcr_image}}
-      #   run: |
-      #     NOW=$(date -u +%s)
-
-      #     gh api \
-      #       -H "Accept: application/vnd.github+json" \
-      #       /orgs/$OWNER/packages/container/$IMAGE_NAME/versions \
-      #       | jq -c '.[]' | while read version; do
-
-      #         CREATED=$(echo $version | jq -r '.created_at')
-      #         VERSION_ID=$(echo $version | jq -r '.id')
-
-      #         CREATED_TS=$(date -d "$CREATED" +%s)
-      #         DIFF=$((NOW - CREATED_TS))
-
-      #         if [ $DIFF -gt 3600 ]; then
-      #           echo "Deleting version $VERSION_ID"
-      #           gh api \
-      #             --method DELETE \
-      #             /orgs/$OWNER/packages/container/$IMAGE_NAME/versions/$VERSION_ID
-      #         fi
-      #       done
