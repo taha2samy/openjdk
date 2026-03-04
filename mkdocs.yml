@@ -76,7 +76,7 @@ markdown_extensions:
   - def_list
 
 nav:
-  - Home: java-8.md
+  - Home: index.md
   - Java 8 LTS: java-8.md
   - Java 11 LTS: java-11.md
   - Java 17 LTS: java-17.md
