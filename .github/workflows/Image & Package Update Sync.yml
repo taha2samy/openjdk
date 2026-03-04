@@ -1,0 +1,54 @@
+name: Image & Package Update Sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-taskfile
+
+      - name: Sync Versions
+        run: task sync
+
+      - name: Generate change summary
+        id: diff
+        run: |
+          if git diff --quiet config/context.json; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "DIFF_STAT<<EOF" >> $GITHUB_ENV
+            git diff --stat config/context.json >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: update context.json versions"
+          branch: automation/sync-context
+          title: "😸 chore: Image & Package Version Sync"
+          body: |
+            ## 🔄 Automated Context Update
+            
+            ```text
+            ${{ env.DIFF_STAT }}
+            ```
+          add-paths: config/context.json
+          delete-branch: true
