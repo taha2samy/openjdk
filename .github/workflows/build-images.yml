@@ -278,29 +278,29 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
-      - name: clean registry
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: ${{ github.repository_owner }}
-          IMAGE_NAME: ${{ env.ghcr_image}}
-        run: |
-          NOW=$(date -u +%s)
+      # - name: clean registry
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     OWNER: ${{ github.repository_owner }}
+      #     IMAGE_NAME: ${{ env.ghcr_image}}
+      #   run: |
+      #     NOW=$(date -u +%s)
 
-          gh api \
-            -H "Accept: application/vnd.github+json" \
-            /orgs/$OWNER/packages/container/$IMAGE_NAME/versions \
-            | jq -c '.[]' | while read version; do
+      #     gh api \
+      #       -H "Accept: application/vnd.github+json" \
+      #       /orgs/$OWNER/packages/container/$IMAGE_NAME/versions \
+      #       | jq -c '.[]' | while read version; do
 
-              CREATED=$(echo $version | jq -r '.created_at')
-              VERSION_ID=$(echo $version | jq -r '.id')
+      #         CREATED=$(echo $version | jq -r '.created_at')
+      #         VERSION_ID=$(echo $version | jq -r '.id')
 
-              CREATED_TS=$(date -d "$CREATED" +%s)
-              DIFF=$((NOW - CREATED_TS))
+      #         CREATED_TS=$(date -d "$CREATED" +%s)
+      #         DIFF=$((NOW - CREATED_TS))
 
-              if [ $DIFF -gt 3600 ]; then
-                echo "Deleting version $VERSION_ID"
-                gh api \
-                  --method DELETE \
-                  /orgs/$OWNER/packages/container/$IMAGE_NAME/versions/$VERSION_ID
-              fi
-            done
+      #         if [ $DIFF -gt 3600 ]; then
+      #           echo "Deleting version $VERSION_ID"
+      #           gh api \
+      #             --method DELETE \
+      #             /orgs/$OWNER/packages/container/$IMAGE_NAME/versions/$VERSION_ID
+      #         fi
+      #       done
