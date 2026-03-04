@@ -238,16 +238,22 @@ jobs:
   merge-and-cleanup-reports:
     needs: scan-images-and-generate-report
     runs-on: ubuntu-latest
-    if: always()
     permissions:
       actions: write
-      contents: read
+      contents: write
+
     steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: setup task and python
+        uses: ./.github/actions/setup-taskfile
+
       - name: Download All Scan Reports
         uses: actions/download-artifact@v4
         with:
           pattern: scan-report-temp-*
-          path: final_reports
+          path: reports
           merge-multiple: true
 
       - name: Delete All Temporary Artifacts
@@ -255,26 +261,46 @@ jobs:
         with:
           name: "*"
           failOnError: false
-
+      - name: Generate Docs 
+        run: |
+          task docs:build-MkDocs-site
       - name: Upload Final Combined Security Report
         uses: actions/upload-artifact@v4
         with:
           name: final-security-compliance-reports
-          path: final_reports
+          path: reports
           retention-days: 1
 
-      # - name: Attest JRE (SLSA)
-      #   if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
-      #   uses:  actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
-      #   with:
-      #     subject-name: ${{ env.ghcr_image }}
-      #     subject-digest: ${{ steps.digests.outputs.jre }}
-      #     push-to-registry: true
+    
+      - name: Deploy to GitHub Pages
+        uses: 
+          peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e  # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+      # - name: clean registry
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     OWNER: ${{ github.repository_owner }}
+      #     IMAGE_NAME: ${{ env.ghcr_image}}
+      #   run: |
+      #     NOW=$(date -u +%s)
 
-      # - name: Attest Distroless (SLSA)
-      #   if: steps.digests.outputs.distro != 'null' && steps.digests.outputs.distro != ''
-      #   uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
-      #   with:
-      #     subject-name: ${{ env.ghcr_image }}
-      #     subject-digest: ${{ steps.digests.outputs.distro }}
-      #     push-to-registry: true
+      #     gh api \
+      #       -H "Accept: application/vnd.github+json" \
+      #       /orgs/$OWNER/packages/container/$IMAGE_NAME/versions \
+      #       | jq -c '.[]' | while read version; do
+
+      #         CREATED=$(echo $version | jq -r '.created_at')
+      #         VERSION_ID=$(echo $version | jq -r '.id')
+
+      #         CREATED_TS=$(date -d "$CREATED" +%s)
+      #         DIFF=$((NOW - CREATED_TS))
+
+      #         if [ $DIFF -gt 3600 ]; then
+      #           echo "Deleting version $VERSION_ID"
+      #           gh api \
+      #             --method DELETE \
+      #             /orgs/$OWNER/packages/container/$IMAGE_NAME/versions/$VERSION_ID
+      #         fi
+      #       done
