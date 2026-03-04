@@ -11,6 +11,8 @@ requests = "*"
 mkdocs-material = "*"
 mkdocs-charts-plugin = "*"
 mkdocs-macros-plugin = "*"
+pytest = "*"
+allure-pytest = "*"
 
 [dev-packages]
 
