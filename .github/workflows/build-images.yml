@@ -238,7 +238,6 @@ jobs:
   merge-and-cleanup-reports:
     needs: scan-images-and-generate-report
     runs-on: ubuntu-latest
-    if: always()
     permissions:
       actions: write
       contents: write
