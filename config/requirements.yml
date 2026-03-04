@@ -23,6 +23,7 @@ wolfi_packages:
   - "busybox"
   - "bash"
   - "curl"
+  - "apk-tools"
 
 bouncycastle_fips_version: "2.1.2"
 bouncycastle_fips_url: "https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/2.1.2/bc-fips-2.1.2.jar"

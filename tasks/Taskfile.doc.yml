@@ -1,0 +1,19 @@
+version: '3'
+
+tasks:
+  serve:
+    desc: "Run MkDocs server locally for live preview"
+    cmds:
+      - pipenv run mkdocs serve --dev-addr 0.0.0.0:8000
+  
+
+  build-MkDocs-site:
+      desc: "Build the final FIPS Boundary Security Dashboard"
+      summary: |
+        This task generates the static site (MkDocs).
+        It assumes all JSON reports (Trivy, KICS, Benchmarks) 
+        are already gathered in the 'reports/' folder.
+      cmds:
+        - echo "Building MkDocs Security Dashboard..."
+        - pipenv run mkdocs build --clean
+        - echo "Done! The site is ready in the 'site/' directory."

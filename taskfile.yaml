@@ -1,5 +1,10 @@
 version: "3"
 
+includes:
+  scan-compliance: tasks/Taskfile.scan-compliance.yml
+  gh: tasks/taskfile.github.yml
+  docs: tasks/Taskfile.doc.yml
+
 output:
   group:
     begin: '::group::{{.TASK}}'
@@ -53,3 +58,31 @@ tasks:
     cmds:
       - task: resolve
       - task: render
+  
+  generate-report:
+    desc: "Generate a JSON report with the image digests for a specific version"
+    vars:
+      VERSION: '{{.VERSION | default "unknown"}}'
+      JDK_SHA: '{{.JDK_SHA | default "null"}}'
+      JRE_SHA: '{{.JRE_SHA | default "null"}}'
+      DISTRO_SHA: '{{.DISTRO_SHA | default "null"}}'
+    cmds:
+      - mkdir -p reports/{{.VERSION}}
+      - sudo apt install jq -y
+      - |
+        jq -n \
+          --arg version "{{.VERSION}}" \
+          --arg jdk "{{.JDK_SHA}}" \
+          --arg jre "{{.JRE_SHA}}" \
+          --arg distro "{{.DISTRO_SHA}}" \
+          '{
+            "java_version": $version,
+            "build_timestamp": (now | strflocaltime("%Y-%m-%dT%H:%M:%SZ")),
+            "digests": {
+              "jdk": $jdk,
+              "jre": $jre,
+              "distroless": $distro
+            }
+          }' > reports/{{.VERSION}}/main-{{.VERSION}}.json
+      - echo "✅ Report generated at reports/{{.VERSION}}/main-{{.VERSION}}.json"
+    silent: true

@@ -3,6 +3,9 @@ image_flavors:
     java_type: "jre"
     options:
       has_shell: false
+      has_package_manager: false
+      use_cache: true
+      use_ldconfig: true
     packages:
       - "glibc"
       - "zlib"
@@ -17,7 +20,12 @@ image_flavors:
     java_type: "jre"
     options:
       has_shell: true 
+      has_package_manager: true
+      use_cache: true
+      use_ldconfig: true
     packages:
+      - "apk-tools"
+      - "wolfi-keys"
       - "glibc"
       - "zlib"
       - "ca-certificates"
@@ -29,11 +37,16 @@ image_flavors:
       - "busybox"
       - "tzdata"
 
-  jdk-devel:
+  jdk-standard:
     java_type: "jdk"
     options:
       has_shell: true
+      has_package_manager: true
+      use_cache: true
+      use_ldconfig: true
     packages:
+      - "apk-tools"
+      - "wolfi-keys"
       - "glibc"
       - "zlib"
       - "ca-certificates"

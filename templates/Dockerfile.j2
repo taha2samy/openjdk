@@ -1,188 +1,146 @@
 # syntax=docker/dockerfile:1.6
+
 FROM {{ wolfi_base }} AS helper
 RUN (addgroup -g 1001 java || true) && (adduser -u 1001 -G java -D -s /bin/bash java || true)
-RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo
+RUN mkdir -p /rootfs/etc /rootfs/usr/share/zoneinfo /rootfs/home/java /rootfs/tmp
 RUN cp /etc/passwd /rootfs/etc/passwd && \
     cp /etc/group /rootfs/etc/group && \
     echo "hosts: files dns" > /rootfs/etc/nsswitch.conf && \
-    cp /usr/share/zoneinfo/UTC /rootfs/usr/share/zoneinfo/UTC && \
-    cp /usr/share/zoneinfo/UTC /rootfs/etc/localtime && \
-    echo "UTC" > /rootfs/etc/timezone
+    echo "UTC" > /rootfs/etc/timezone && \
+    chown 1001:1001 /rootfs/home/java && \
+    chmod 1777 /rootfs/tmp
 
 FROM {{ wolfi_base }} AS producer
 USER root
+{{ 'jre_distroless' | setup_flavor(flavors) }}
+{{ 'jre_standard' | setup_flavor(flavors) }}
+{{ 'jdk_standard' | setup_flavor(flavors) }}
 
-RUN mkdir -p /rootfs/jre_distroless && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jre_distroless \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_distroless.packages %}{{ pkg }} {% endfor %}
-
-RUN mkdir -p /rootfs/jre_standard && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jre_standard \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jre_standard.packages %}{{ pkg }} {% endfor %}
-RUN for applet in $(/rootfs/jre_standard/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jre_standard/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jre_standard/usr/bin/sh
-
-RUN mkdir -p /rootfs/jdk_devel && \
-    apk add --no-cache --initdb --no-scripts --root /rootfs/jdk_devel \
-    --keys-dir /etc/apk/keys --repositories-file /etc/apk/repositories \
-    {% for pkg in flavors.jdk_devel.packages %}{{ pkg }} {% endfor %}
-RUN for applet in $(/rootfs/jdk_devel/usr/bin/busybox --list); do \
-    ln -sf busybox /rootfs/jdk_devel/usr/bin/$applet; \
-    done && ln -sf busybox /rootfs/jdk_devel/usr/bin/sh
-
-
-FROM {{ alpine }} AS fetcher
+FROM {{ alpine }} AS jdk_fetcher
 ARG TARGETARCH
+# kics-scan ignore-line
+ADD --checksum=sha256:{{ jdk_amd64_sha }} {{ jdk_amd64_url }} /tmp/jdk-amd64.tar.gz
+# kics-scan ignore-line
+ADD --checksum=sha256:{{ jdk_arm64_sha }} {{ jdk_arm64_url }} /tmp/jdk-arm64.tar.gz
+RUN set -eux; apk add --no-cache tar="1.35-r2"; \
+    if [ "$TARGETARCH" = "amd64" ]; then SRC="/tmp/jdk-amd64.tar.gz"; else SRC="/tmp/jdk-arm64.tar.gz"; fi; \
+    mkdir -p /opt/java-jdk; tar -xzf "$SRC" -C /opt/java-jdk --strip-components=1
 
-ADD --checksum=sha256:{{ jdk_amd64_sha }} {{ jdk_amd64_url }} /tmp/java-amd64.tar.gz
-ADD --checksum=sha256:{{ jdk_arm64_sha }} {{ jdk_arm64_url }} /tmp/java-arm64.tar.gz
+FROM {{ alpine }} AS jre_fetcher
+ARG TARGETARCH
+# kics-scan ignore-line
+ADD --checksum=sha256:{{ jre_amd64_sha }} {{ jre_amd64_url }} /tmp/jre-amd64.tar.gz
+# kics-scan ignore-line
+ADD --checksum=sha256:{{ jre_arm64_sha }} {{ jre_arm64_url }} /tmp/jre-arm64.tar.gz
+RUN set -eux; apk add --no-cache tar="1.35-r2"; \
+    if [ "$TARGETARCH" = "amd64" ]; then SRC="/tmp/jre-amd64.tar.gz"; else SRC="/tmp/jre-arm64.tar.gz"; fi; \
+    mkdir -p /opt/java-jre; tar -xzf "$SRC" -C /opt/java-jre --strip-components=1
 
-RUN set -eux; \
-    apk add --no-cache tar; \
-    if [ "$TARGETARCH" = "amd64" ]; then \
-    JAVA_SOURCE="/tmp/java-amd64.tar.gz"; \
-    else \
-    JAVA_SOURCE="/tmp/java-arm64.tar.gz"; \
-    fi; \
-    mkdir -p /opt/java-full; \
-    tar -xzf "$JAVA_SOURCE" -C /opt/java-full --strip-components=1; \
-    rm /tmp/java-amd64.tar.gz /tmp/java-arm64.tar.gz
-
-FROM {{ wolfi_base }} AS cleaner
-COPY --from=fetcher /opt/java-full /opt/java-slim
-{% if version == '8' %}
-RUN rm -rf /opt/java-slim/src.zip /opt/java-slim/demo /opt/java-slim/sample /opt/java-slim/man
-{% else %}
-RUN rm -rf /opt/java-slim/jmods /opt/java-slim/lib/src.zip /opt/java-slim/demo /opt/java-slim/sample /opt/java-slim/man /opt/java-slim/docs
-{% endif %}
-
-FROM cleaner AS fips-modifier
+FROM {{ wolfi_base }} AS fips-modifier
 USER root
-RUN apk add --no-cache curl
-
+RUN apk add --no-cache curl={{ curl }}
+ARG KEYSTORE_PWD=changeit
 COPY java.security /tmp/java.security
-
-ADD --chmod=644 --checksum=sha256:{{ bouncycastle_fips_sha }} \
-    {{ bouncycastle_fips_url }} /tmp/bc-fips.jar
-
-ADD --chmod=644 --checksum=sha256:{{ bouncycastle_util_fips_sha }} \
-    {{ bouncycastle_util_fips_url }} /tmp/bcutil-fips.jar
-
-ADD --chmod=644 --checksum=sha256:{{ bouncycastle_tls_fips_sha }} \
-    {{ bouncycastle_tls_fips_url }} /tmp/bctls-fips.jar
-
+# kics-scan ignore-line
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_fips_sha }} {{ bouncycastle_fips_url }} /tmp/bc-fips.jar
+# kics-scan ignore-line
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_util_fips_sha }} {{ bouncycastle_util_fips_url }} /tmp/bcutil-fips.jar
+# kics-scan ignore-line
+ADD --chmod=644 --checksum=sha256:{{ bouncycastle_tls_fips_sha }} {{ bouncycastle_tls_fips_url }} /tmp/bctls-fips.jar
 RUN curl -fLso /tmp/cacert.pem https://curl.se/ca/cacert.pem
 
+COPY --from=jdk_fetcher /opt/java-jdk /opt/jdk
+COPY --from=jre_fetcher /opt/java-jre /opt/jre
+
 RUN set -e; \
-    {%- if version == '8' %}
-    if [ -d "/opt/java-slim/jre" ]; then \
-    CACERTS_PATH="/opt/java-slim/jre/lib/security/cacerts"; \
-    SEC_FILE="/opt/java-slim/jre/lib/security/java.security"; \
-    J_LIB_DIR="/opt/java-slim/jre/lib/ext"; \
-    else \
-    CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
-    SEC_FILE="/opt/java-slim/lib/security/java.security"; \
-    J_LIB_DIR="/opt/java-slim/lib/ext"; \
-    fi; \
-    {%- else %}
-    CACERTS_PATH="/opt/java-slim/lib/security/cacerts"; \
-    SEC_FILE="/opt/java-slim/conf/security/java.security"; \
-    J_LIB_DIR="/opt/java-slim/lib"; \
-    {%- endif %}
-    /opt/java-slim/bin/keytool -importkeystore \
-    -srckeystore "$CACERTS_PATH" \
-    -srcstorepass changeit \
-    -destkeystore /tmp/cacerts.bcfks \
-    -deststoretype BCFKS \
-    -deststorepass changeit \
-    -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
-    -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider && \
-    mv /tmp/cacerts.bcfks "$CACERTS_PATH" && \
-    mkdir -p "$J_LIB_DIR" && \
-    cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$J_LIB_DIR/" && \
-    cp /tmp/java.security "$SEC_FILE" && \
-    rm -rf /tmp/*.jar /tmp/java.security /tmp/*.pem
+    for JAVA_PATH in /opt/jdk /opt/jre; do \
+        {%- if version == '8' %}
+        if [ -d "$JAVA_PATH/jre" ]; then \
+            CACERTS="$JAVA_PATH/jre/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/jre/lib/security/java.security"; LIB_DIR="$JAVA_PATH/jre/lib/ext"; \
+        else \
+            CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/lib/security/java.security"; LIB_DIR="$JAVA_PATH/lib/ext"; \
+        fi; \
+        {%- else %}
+        CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/conf/security/java.security"; LIB_DIR="$JAVA_PATH/lib"; \
+        {%- endif %}
+        $JAVA_PATH/bin/keytool -importkeystore -srckeystore "$CACERTS" -srcstorepass ${KEYSTORE_PWD} \
+        -destkeystore /tmp/cacerts.bcfks -deststoretype BCFKS -deststorepass ${KEYSTORE_PWD} \
+        -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
+        -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider && \
+        mv /tmp/cacerts.bcfks "$CACERTS" && mkdir -p "$LIB_DIR" && \
+        cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$LIB_DIR/" && \
+        cp /tmp/java.security "$SEC_FILE"; \
+    done
 
-FROM scratch AS jdk-standard
-COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jdk_devel /
-COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
-ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
-{% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
-{% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
-{% endif %}
-LABEL org.opencontainers.image.authors="taha2samy" \
-      org.opencontainers.image.vendor="taha2samy" \
-      org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
-      org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
-      org.opencontainers.image.version="{{ full_ver }}" \
-      org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
-      org.opencontainers.image.licenses="Apache-2.0" \
-      java.version="{{ version }}" \
-      java.full_version="{{ full_ver }}" \
-      java.flavor="{{ flavor_name }}" \
-      java.type="{{ java_type }}" \
-      security.fips="enabled" \
-      os.base="wolfi-os"
-USER java
-WORKDIR /home/java
-ENTRYPOINT []
 
-FROM scratch AS jre-standard
+
+FROM scratch AS base_jdk_standard
+COPY --from=producer /rootfs/jdk_standard /
 COPY --from=helper /rootfs /
+
+FROM scratch AS base_jre_standard
 COPY --from=producer /rootfs/jre_standard /
-COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
+COPY --from=helper /rootfs /
+
+FROM scratch AS base_jre_distroless
+COPY --from=producer /rootfs/jre_distroless /
+COPY --from=helper /rootfs /
+
+
+
+# --- Image 1: JDK Standard ---
+FROM scratch AS jdk_standard
+COPY --from=base_jdk_standard / /
+COPY --from=fips-modifier /opt/jdk /opt/java
 ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
+ARG KEYSTORE_PWD=changeit
+
 {% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
-LABEL org.opencontainers.image.authors="taha2samy" \
-      org.opencontainers.image.vendor="taha2samy" \
-      org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
-      org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
-      org.opencontainers.image.version="{{ full_ver }}" \
-      org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
-      org.opencontainers.image.licenses="Apache-2.0" \
-      java.version="{{ version }}" \
-      java.full_version="{{ full_ver }}" \
-      java.flavor="{{ flavor_name }}" \
-      java.type="{{ java_type }}" \
-      security.fips="enabled" \
-      os.base="wolfi-os"
-USER java
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/opt/java/bin/java", "-version"]
+USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
 
-FROM scratch AS jre-distroless
-COPY --from=helper /rootfs /
-COPY --from=producer /rootfs/jre_distroless /
-COPY --from=fips-modifier --chown=1001:1001 /opt/java-slim /opt/java
-ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 TZ=UTC
+# --- Image 2: JRE Standard ---
+FROM scratch AS jre_standard
+COPY --from=base_jre_standard / /
+COPY --from=fips-modifier /opt/jre /opt/java
+ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
+ARG KEYSTORE_PWD=changeit
+
 {% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=changeit -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
-LABEL org.opencontainers.image.authors="taha2samy" \
-      org.opencontainers.image.vendor="taha2samy" \
-      org.opencontainers.image.title="Eclipse Temurin Java {{ full_ver }} - {{ flavor_name }}" \
-      org.opencontainers.image.description="FIPS 140-3 compliant Java image based on Wolfi OS" \
-      org.opencontainers.image.version="{{ full_ver }}" \
-      org.opencontainers.image.source="https://github.com/taha2samy/openjdk-fips" \
-      org.opencontainers.image.licenses="Apache-2.0" \
-      java.version="{{ version }}" \
-      java.full_version="{{ full_ver }}" \
-      java.flavor="{{ flavor_name }}" \
-      java.type="{{ java_type }}" \
-      security.fips="enabled" \
-      os.base="wolfi-os"
-USER java
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/opt/java/bin/java", "-version"]
+USER 1001
+WORKDIR /home/java
+ENTRYPOINT []
+
+# --- Image 3: JRE Distroless ---
+FROM scratch AS jre_distroless
+COPY --from=base_jre_distroless / /
+COPY --from=fips-modifier /opt/jre /opt/java
+ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C.UTF-8 TZ=UTC
+ARG KEYSTORE_PWD=changeit
+
+{% if version == '8' %}
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+{% else %}
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+{% endif %}
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/opt/java/bin/java", "-version"]
+USER 1001
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]

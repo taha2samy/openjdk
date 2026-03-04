@@ -1,17 +1,20 @@
 
 
+.trivycache/
 versions/21/*
 versions/8/*
 versions/11/*
 versions/17/*
 versions/25/*
+reports/*
 .github/scripts/generate_readme.py
 templates/java-version-row.md.j2
 __pycache__
 versions/*/*.json
-
+/site/
 
 versions/*/Dockerfile
 versions/*/java.security
 versions/*/build.hcl
 versions/*/Dockerfile
+REPORT/*

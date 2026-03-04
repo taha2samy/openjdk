@@ -19,6 +19,15 @@ on:
         type: boolean
         default: true
 
+
+
+
+
+env:
+  repo: java
+  ghcr_image: ghcr.io/${{ github.repository_owner }}/java
+
+
 jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
@@ -53,13 +62,8 @@ jobs:
     steps:
 
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
-      - name: Setup Environment
-        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Setup Taskfile
-        uses: ./.github/actions/setup-taskfile/action.yml
+        uses: ./.github/actions/setup-taskfile
       - name: Resolve and Render
         run: task render
 
@@ -70,11 +74,12 @@ jobs:
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
         with:
           registry: ghcr.io
-          username: ${{ env.OWNER_LC }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push
         uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4  # v6
+        id: build
         with:
           source: .
           files: |
@@ -82,5 +87,194 @@ jobs:
             versions/${{ matrix.java_version }}/build.hcl
           targets: java${{ matrix.java_version }}
           push: true
-          set: |-
-            *.args.GHCR_REGISTRY=ghcr.io/${{ env.OWNER_LC }}
+      - name: Extract Digests
+        id: digests
+        run: |
+          METADATA='${{ steps.build.outputs.metadata }}'          
+          JDK_TARGET="java${{ matrix.java_version }}-jdk_standard"
+          JRE_TARGET="java${{ matrix.java_version }}-jre_standard"
+          DISTRO_TARGET="java${{ matrix.java_version }}-jre_distroless"
+          
+          echo "Extracting digest for $JDK_TARGET..."
+          JDK_SHA=$(echo "$METADATA" | jq -r --arg t "$JDK_TARGET" '.[$t]["containerimage.digest"]')
+          
+          echo "Extracting digest for $JRE_TARGET..."
+          JRE_SHA=$(echo "$METADATA" | jq -r --arg t "$JRE_TARGET" '.[$t]["containerimage.digest"]')
+          
+          echo "Extracting digest for $DISTRO_TARGET..."
+          DISTRO_SHA=$(echo "$METADATA" | jq -r --arg t "$DISTRO_TARGET" '.[$t]["containerimage.digest"]')          
+          echo "Found JDK SHA: $JDK_SHA"
+          echo "Found JRE SHA: $JRE_SHA"
+          echo "Found Distro SHA: $DISTRO_SHA"          
+          echo "jdk=$JDK_SHA" >> $GITHUB_OUTPUT
+          echo "jre=$JRE_SHA" >> $GITHUB_OUTPUT
+          echo "distro=$DISTRO_SHA" >> $GITHUB_OUTPUT
+          task generate-report \
+            VERSION=${{ matrix.java_version }} \
+            JDK_SHA=$JDK_SHA \
+            JRE_SHA=$JRE_SHA \
+            DISTRO_SHA=$DISTRO_SHA
+      - name: Upload Build Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report-java-${{ matrix.java_version }}
+          path: reports/${{ matrix.java_version }}/main-${{ matrix.java_version }}.json
+          retention-days: 1
+
+
+
+  scan-images-and-generate-report:
+    needs: [build-and-push, prepare-matrix]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      packages: write
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        java_version: ${{ fromJSON(needs.prepare-matrix.outputs.versions) }}
+        image_type: [jdk, jre, distroless]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Taskfile
+        uses: ./.github/actions/setup-taskfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-report-java-${{ matrix.java_version }}
+          path: reports/${{ matrix.java_version }}
+
+      - name: get digest
+        id: get-digest
+        run: |
+          echo "digest=$(cat reports/${{ matrix.java_version }}/main-${{ matrix.java_version }}.json | jq -r .digests.${{ matrix.image_type }})" >> $GITHUB_OUTPUT
+
+      - name: login to ghcr
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest ${{ matrix.image_type }} (SLSA)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32
+        id: attest_provenance-image
+        with:
+          subject-name: ${{ env.ghcr_image }}
+          subject-digest: ${{ steps.get-digest.outputs.digest }}
+          push-to-registry: true
+
+      - name: Explicit Pull Image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }} && mkdir -p reports/${{ matrix.java_version }}/${{ matrix.image_type }}
+
+      - name: Generate SBOM (CycloneDX)
+        id: generate_sbom
+        uses: anchore/sbom-action@v0.18.0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }}
+          format: cyclonedx-json
+          output-file: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json
+          upload-artifact: false
+          dependency-snapshot: false
+
+      - name: Upload SBOM to Dependency Graph
+        run: |
+          task gh:upload-sbom \
+            FILE=reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json \
+            TARGET=java-${{ matrix.java_version }}-${{ matrix.image_type }}.sbom \
+            REPO=${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF: ${{ github.ref }}
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34  # v3
+        id: attest_sbom
+        with:
+          subject-name: ${{ env.ghcr_image }}
+          subject-digest: ${{ steps.get-digest.outputs.digest }}
+          sbom-path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}.cyclonedx.json
+          push-to-registry: true
+          show-summary: false
+
+
+      - name: Save Attestation Details to JSON
+        run: |
+          echo '{
+            "target": "${{ matrix.java_version }}-${{ matrix.image_type }}",
+            "provenance": {
+              "id": "${{ steps.attest_provenance-image.outputs.attestation-id }}",
+              "url": "${{ steps.attest_provenance-image.outputs.attestation-url }}",
+              "digest": "${{ steps.get-digest.outputs.digest }}"
+            },
+            "sbom": {
+              "id": "${{ steps.attest_sbom.outputs.attestation-id }}",
+              "url": "${{ steps.attest_sbom.outputs.attestation-url }}"
+            }
+          }' > reports/${{ matrix.java_version }}/${{ matrix.image_type }}/${{ matrix.java_version }}-${{ matrix.image_type }}_attestation_details.json
+
+      - name: full-scan-image
+        run: |
+          task scan-compliance:full-compliance \
+            IMAGE=ghcr.io/${{ github.repository_owner }}/java@${{ steps.get-digest.outputs.digest }} \
+            REPORT_ID=${{ matrix.java_version }}-${{ matrix.image_type }}-report \
+            OS=wolfi \
+            IS_DISTROLESS=${{ matrix.image_type == 'distroless' }} \
+            OUT_DIR=reports/${{ matrix.java_version }}/${{ matrix.image_type }}
+
+      - name: Upload Scan Report Segment
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-report-temp-${{ matrix.java_version }}-${{ matrix.image_type }}
+          path: reports/${{ matrix.java_version }}/${{ matrix.image_type }}
+          retention-days: 1
+
+  merge-and-cleanup-reports:
+    needs: scan-images-and-generate-report
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Download All Scan Reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: scan-report-temp-*
+          path: final_reports
+          merge-multiple: true
+
+      - name: Delete All Temporary Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: "*"
+          failOnError: false
+
+      - name: Upload Final Combined Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-security-compliance-reports
+          path: final_reports
+          retention-days: 1
+
+      # - name: Attest JRE (SLSA)
+      #   if: steps.digests.outputs.jre != 'null' && steps.digests.outputs.jre != ''
+      #   uses:  actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+      #   with:
+      #     subject-name: ${{ env.ghcr_image }}
+      #     subject-digest: ${{ steps.digests.outputs.jre }}
+      #     push-to-registry: true
+
+      # - name: Attest Distroless (SLSA)
+      #   if: steps.digests.outputs.distro != 'null' && steps.digests.outputs.distro != ''
+      #   uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32  # v4
+      #   with:
+      #     subject-name: ${{ env.ghcr_image }}
+      #     subject-digest: ${{ steps.digests.outputs.distro }}
+      #     push-to-registry: true
