@@ -245,7 +245,7 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-        
+
       - name: setup task and python
         uses: ./.github/actions/setup-taskfile
 
@@ -253,7 +253,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: scan-report-temp-*
-          path: final_reports
+          path: reports
           merge-multiple: true
 
       - name: Delete All Temporary Artifacts
@@ -268,7 +268,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: final-security-compliance-reports
-          path: final_reports
+          path: reports
           retention-days: 1
 
     
