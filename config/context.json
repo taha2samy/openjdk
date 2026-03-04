@@ -10,8 +10,8 @@
     "bouncycastle_util_fips_version": "2.1.5",
     "images": {
         "alpine": "alpine@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1",
-        "static": "chainguard/static@sha256:b24ac9892a647b64bc8341e6b9280885c44004b32ffc8d57d3218960280e1d89",
-        "wolfi_base": "chainguard/wolfi-base@sha256:9925d3017788558fa8f27e8bb160b791e56202b60c91fbcc5c867de3175986c8"
+        "static": "chainguard/static@sha256:d6a97eb401cbc7c6d48be76ad81d7899b94303580859d396b52b67bc84ea7345",
+        "wolfi_base": "chainguard/wolfi-base@sha256:74cc4315c1344a40a7ac1e7d1b8f26cc7dba2256791338c0f12e745be950a143"
     },
     "java": {
         "11": {
@@ -120,14 +120,14 @@
         "bash": "5.3-r5",
         "busybox": "1.37.0-r54",
         "ca-certificates": "20251003-r3",
-        "curl": "8.18.0-r2",
-        "glibc": "2.43-r1",
-        "libgcc": "15.2.0-r9",
-        "libstdc++": "15.2.0-r9",
-        "posix-libc-utils": "2.43-r1",
+        "curl": "8.18.0-r3",
+        "glibc": "2.43-r2",
+        "libgcc": "15.2.0-r10",
+        "libstdc++": "15.2.0-r10",
+        "posix-libc-utils": "2.43-r2",
         "tzdata": "2026a-r0",
         "wolfi-baselayout": "20230201-r28",
         "wolfi-keys": "1-r13",
-        "zlib": "1.3.2-r0"
+        "zlib": "1.3.2-r1"
     }
 }
