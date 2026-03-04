@@ -54,22 +54,22 @@ COPY --from=jre_fetcher /opt/java-jre /opt/jre
 
 RUN set -e; \
     for JAVA_PATH in /opt/jdk /opt/jre; do \
-        {%- if version == '8' %}
-        if [ -d "$JAVA_PATH/jre" ]; then \
-            CACERTS="$JAVA_PATH/jre/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/jre/lib/security/java.security"; LIB_DIR="$JAVA_PATH/jre/lib/ext"; \
-        else \
-            CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/lib/security/java.security"; LIB_DIR="$JAVA_PATH/lib/ext"; \
-        fi; \
-        {%- else %}
-        CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/conf/security/java.security"; LIB_DIR="$JAVA_PATH/lib"; \
-        {%- endif %}
-        $JAVA_PATH/bin/keytool -importkeystore -srckeystore "$CACERTS" -srcstorepass ${KEYSTORE_PWD} \
-        -destkeystore /tmp/cacerts.bcfks -deststoretype BCFKS -deststorepass ${KEYSTORE_PWD} \
-        -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
-        -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider && \
-        mv /tmp/cacerts.bcfks "$CACERTS" && mkdir -p "$LIB_DIR" && \
-        cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$LIB_DIR/" && \
-        cp /tmp/java.security "$SEC_FILE"; \
+    {%- if version == '8' %}
+if [ -d "$JAVA_PATH/jre" ]; then \
+    CACERTS="$JAVA_PATH/jre/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/jre/lib/security/java.security"; LIB_DIR="$JAVA_PATH/jre/lib/ext"; \
+    else \
+    CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/lib/security/java.security"; LIB_DIR="$JAVA_PATH/lib/ext"; \
+    fi; \
+    {%- else %}
+CACERTS="$JAVA_PATH/lib/security/cacerts"; SEC_FILE="$JAVA_PATH/conf/security/java.security"; LIB_DIR="$JAVA_PATH/lib"; \
+    {%- endif %}
+$JAVA_PATH/bin/keytool -importkeystore -srckeystore "$CACERTS" -srcstorepass ${KEYSTORE_PWD} \
+    -destkeystore /tmp/cacerts.bcfks -deststoretype BCFKS -deststorepass ${KEYSTORE_PWD} \
+    -providerpath "/tmp/bc-fips.jar:/tmp/bcutil-fips.jar" \
+    -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider && \
+    mv /tmp/cacerts.bcfks "$CACERTS" && mkdir -p "$LIB_DIR" && \
+    cp /tmp/bc-fips.jar /tmp/bcutil-fips.jar /tmp/bctls-fips.jar "$LIB_DIR/" && \
+    cp /tmp/java.security "$SEC_FILE"; \
     done
 
 
@@ -96,13 +96,13 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
 
 {% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/opt/java/bin/java", "-version"]
+    CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -115,13 +115,13 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin"
 ARG KEYSTORE_PWD=changeit
 
 {% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/opt/java/bin/java", "-version"]
+    CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT []
@@ -134,13 +134,13 @@ ENV JAVA_HOME=/opt/java PATH="/opt/java/bin:/usr/local/bin:/usr/bin:/bin" LANG=C
 ARG KEYSTORE_PWD=changeit
 
 {% if version == '8' %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/jre/lib/ext/bc-fips.jar:/opt/java/jre/lib/ext/bcutil-fips.jar:/opt/java/jre/lib/ext/bctls-fips.jar"
 {% else %}
-ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=false -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
+ENV JAVA_TOOL_OPTIONS="-Dorg.bouncycastle.fips.approved_only=true -Dorg.bouncycastle.jsse.client.assumeExtendedKeyUsage=false -Dorg.bouncycastle.jsse.trustManager.checkEKU=true -Djdk.tls.trustNameService=true -Dkeystore.type=BCFKS -Djavax.net.ssl.trustStore=/opt/java/lib/security/cacerts -Djavax.net.ssl.trustStoreType=BCFKS -Djavax.net.ssl.trustStorePassword=${KEYSTORE_PWD} -Xbootclasspath/a:/opt/java/lib/bc-fips.jar:/opt/java/lib/bcutil-fips.jar:/opt/java/lib/bctls-fips.jar"
 {% endif %}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/opt/java/bin/java", "-version"]
+    CMD ["/opt/java/bin/java", "-version"]
 USER 1001
 WORKDIR /home/java
 ENTRYPOINT ["/opt/java/bin/java"]

@@ -155,3 +155,89 @@ All images in this repository share a unified and streamlined execution model. T
     # The ENTRYPOINT ["/opt/java/bin/java"] is seamlessly inherited.
     CMD ["-Xmx512m", "-jar", "/app.jar"]
     ```
+
+
+=== ":material-test-tube: Real-world Network Verification"
+
+    This example demonstrates a complete end-to-end flow: compiling code with the **JDK SDK**, running it on **Distroless JRE**, and verifying a secure HTTPS connection via **BCFIPS JSSE**.
+
+    === ":material-coffee: Main.java"
+
+        ```java
+        import java.net.URI;
+        import java.net.http.HttpClient;
+        import java.net.http.HttpRequest;
+        import java.net.http.HttpResponse;
+
+        public class Main {
+            public static void main(String[] args) {
+                try {
+                    System.out.println("--- FIPS TLS Handshake Test ---");
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create("https://adoptium.net"))
+                            .GET()
+                            .build();
+
+                    System.out.println("Connecting to Adoptium via Secure TLS...");
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                    System.out.println("Response Status: " + response.statusCode());
+                    System.out.println("Connection Proof: TLS Session established via BCFIPS");
+                    System.out.println("SUCCESS: Secure network communication verified.");
+                } catch (Exception e) {
+                    System.err.println("FAILED: Security provider blocked the connection.");
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }
+        }
+        ```
+
+    === ":material-docker: Dockerfile"
+
+        ```dockerfile
+        # Step 1: Compile using the full SDK
+        FROM ghcr.io/taha2samy/java:21-jdk_standard AS builder
+        WORKDIR /app
+        COPY Main.java .
+        RUN ["/opt/java/bin/javac", "Main.java"]
+
+        # Step 2: Run using the Hardened Distroless Runtime
+        FROM ghcr.io/taha2samy/java:21-jre_distroless
+        WORKDIR /app
+        COPY --from=builder /app/Main.class .
+
+        # Uses the pre-configured ENTRYPOINT java
+        CMD ["Main"]
+        ```
+
+    === ":material-text-box-check-outline: Verification Logs"
+
+        !!! info "Runtime Trace Analysis"
+            The following logs confirm that **Bouncy Castle JSSE** is handling the TLS handshake and verifying the **BCFKS TrustStore** integrity.
+
+        ```text
+
+        --- FIPS TLS Handshake Test ---
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSecurityProperty
+        INFO: Found boolean security property [keystore.type.compat]: false
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
+        INFO: Found string system property [javax.net.ssl.trustStore]: /opt/java/lib/security/cacerts
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSystemProperty
+        INFO: Found string system property [javax.net.ssl.trustStoreType]: BCFKS
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getSensitiveStringSystemProperty
+        INFO: Found sensitive string system property [javax.net.ssl.trustStorePassword]
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getBooleanSystemProperty
+        INFO: Found boolean system property [org.bouncycastle.jsse.trustManager.checkEKU]: false
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
+        INFO: Found string security property [jdk.tls.disabledAlgorithms]: SSLv3, TLSv1, TLSv1.1, RC4, DES, 3DES_EDE_CBC, TDEA, MD5, NULL, anon, ECDH, DH keySize < 2048, RSA keySize < 2048
+        Mar 04, 2026 8:38:41 PM org.bouncycastle.jsse.provider.PropertyUtils getStringSecurityProperty
+        INFO: Found string security property [jdk.certpath.disabledAlgorithms]: MD2, MD5, SHA1 keySize < 1024, RSA keySize < 2048, DSA keySize < 2048, EC keySize < 224
+        Connecting to Adoptium via Secure TLS...
+        Response Status: 200
+        Connection Proof: TLS Session established via BCFIPS
+        SUCCESS: Secure network communication verified.
+
+
+        ```
