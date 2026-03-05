@@ -56,7 +56,7 @@ def parse_allure_results(results_dir):
     return report
 
 if __name__ == "__main__":
-    MY_PATH = "reports/allure-results" 
+    MY_PATH = "reports/8-fips/allure-results" 
     
     final_data = parse_allure_results(MY_PATH)
     
