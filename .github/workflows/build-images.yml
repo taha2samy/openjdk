@@ -146,12 +146,16 @@ jobs:
         run: cat reports/${{ matrix.java_version }}/main-${{ matrix.java_version }}.json
       - name: run fips boundary testing
         run: task gh:FIPS-boundary-testing VERSION=${{ matrix.java_version }}
-      - name: Upload Scan Report Segment
+      - name: compress allure results
+        run: |
+          zip -r fips-report-java${{ matrix.java_version }}.zip reports/${{ matrix.java_version }}-fips
+      - name: Upload Compressed Scan Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: scan-report-temp-${{ matrix.java_version }}-fips
-          path: reports/${{ matrix.java_version }}-fips
+          name: fips-results-java-${{ matrix.java_version }}
+          path: fips-report-java${{ matrix.java_version }}.zip
           retention-days: 1
+
 
 
 
@@ -322,11 +326,18 @@ jobs:
       - name: Download All Scan Reports
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          pattern: scan-report-temp-*
+          pattern: scan-report*
           path: reports
           merge-multiple: true
 
-
+      - name: Extract all reports
+        run: |
+          for file in reports/*.zip; do
+            if [ -f "$file" ]; then
+              unzip -o "$file" -d .
+              rm "$file"
+            fi
+          done
       - name: Delete All Temporary Artifacts
         uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b  # v5
         with:
