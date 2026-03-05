@@ -282,6 +282,10 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 
       - name: remove .gitignore
         run: rm .gitignore
+      - name: setup task and python
+        uses: ./.github/actions/setup-taskfile
+      - name: render dockerfiles
+        run: task render
       - name: Run KICS Scan
         uses: 
           checkmarx/kics-github-action@00def9108246ec656aea725db2167522d26a99d2  # v2.1.19
@@ -300,7 +304,7 @@ jobs:
 
 
   merge-and-cleanup-reports:
-    needs: [scan-images-and-generate-report, kics-scan]
+    needs: [scan-images-and-generate-report, kics-scan, FIPS-boundry-testing]
     runs-on: ubuntu-latest
     permissions:
       actions: write
