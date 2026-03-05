@@ -49,6 +49,6 @@ tasks:
         mkdir -p reports/{{.VERSION}}-fips
         pipenv run pytest tests \
           --jdk-img=ghcr.io/taha2samy/java@${JDK_SHA} \
-          --jre-img=gcr.io/taha2samy/java@${DISTROLESS_SHA} \
+          --jre-img=ghcr.io/taha2samy/java@${DISTROLESS_SHA} \
           --json-report \
           --json-report-file=reports/{{.VERSION}}-fips/report.json
