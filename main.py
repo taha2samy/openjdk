@@ -35,7 +35,7 @@ def load_java_version(version):
     "config":dict(config),
     "tags":[repo_of_registry+f":{version}-jdk_standard",repo_of_registry+f":{str(config['full_ver']).replace('-', '_')}-jdk_standard"]
     }
-    java = {"jdk_standerd":jdk_std,"jre_standerd":jre_std,"jre_distroless":jre_distroless}
+    java = {"jdk_standerd":jdk_std,"jre_standerd":jre_std,"jre_distroless":jre_distroless,"fips_tests":loadjson(f"reports/{version}-fips-report.json")}
     return java
 
 

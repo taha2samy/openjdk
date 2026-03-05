@@ -39,16 +39,21 @@ tasks:
 
 
   FIPS-boundary-testing:
-    desc: Run Fips boundary testing
+    desc: Run Fips boundary testing with Allure reporting
     vars:
       VERSION: '{{.VERSION | default "unknown"}}'
     cmds:
       - |
         JDK_SHA=$(jq -r '.digests.jdk' reports/{{.VERSION}}/main-{{.VERSION}}.json)
         DISTROLESS_SHA=$(jq -r '.digests.distroless' reports/{{.VERSION}}/main-{{.VERSION}}.json)
-        mkdir -p reports/{{.VERSION}}-fips
+          
+        ALLURE_DIR="reports/{{.VERSION}}-fips/allure-results"
+        mkdir -p ${ALLURE_DIR}
+
         pipenv run pytest tests \
           --jdk-img=ghcr.io/taha2samy/java@${JDK_SHA} \
           --jre-img=ghcr.io/taha2samy/java@${DISTROLESS_SHA} \
-          --json-report \
-          --json-report-file=reports/{{.VERSION}}-fips/{{.VERSION}}-fips-report.json
+          --alluredir=${ALLURE_DIR} \
+          --clean-alluredir
+          
+        echo "✅ Tests complete. Results saved in: ${ALLURE_DIR}"
