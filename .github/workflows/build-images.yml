@@ -152,7 +152,7 @@ jobs:
       - name: Upload Compressed Scan Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: fips-results-java-${{ matrix.java_version }}
+          name: scan-report-${{ matrix.java_version }}-fips
           path: fips-report-java${{ matrix.java_version }}.zip
           retention-days: 1
 
