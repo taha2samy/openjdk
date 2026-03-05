@@ -40,6 +40,8 @@ tasks:
 
   FIPS-boundary-testing:
     desc: Run Fips boundary testing
+    vars:
+      VERSION: '{{.VERSION | default "unknown"}}'
     cmds:
       - |
         JDK_SHA=$(jq -r '.digests.jdk' reports/{{.VERSION}}/main-{{.VERSION}}.json)
