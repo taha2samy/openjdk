@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+
 repo_of_registry="ghcr.io/taha2samy/java"
 
 
@@ -38,6 +40,18 @@ def load_java_version(version):
 
 
 def define_env(env):
+
+    @env.filter
+    def to_datetime(date_str):
+        try:
+            clean_date = date_str.replace('Z', '+00:00').split('.')[0]
+            return datetime.fromisoformat(clean_date)
+        except:
+            return datetime.now()
+
+
+    env.variables.update({"kics_report":loadjson("reports/kics-report.json")})
+    
     env.variables["repo_of_registry"]=repo_of_registry
     env.variables.update({"java_8": load_java_version("8")})
     env.variables.update({"java_11": load_java_version("11")})
