@@ -98,7 +98,8 @@ if __name__ == "__main__":
     # Add all your workflow or action files here
     files_to_pin = [
         ".github/workflows/build-images.yml",
-        # ".github/workflows/another-workflow.yml"
+         ".github/workflows/Update and  Sync.yml",
+         ".github/actions/setup-taskfile/action.yml"
     ]
     
     for file in files_to_pin:

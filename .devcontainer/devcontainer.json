@@ -1,5 +1,5 @@
 {
-  "name": "Ghost-Core Dev Container",
+  "name": "openjdk Dev Container",
   "build": {
     "dockerfile": "dockerfile"
   },

@@ -10,6 +10,9 @@ requests = "*"
 "ruamel.yaml" = "*"
 mkdocs-material = "*"
 mkdocs-charts-plugin = "*"
+pytest = "*"
+allure-pytest = "*"
+pytest-json-report = "*"
 mkdocs-macros-plugin = "*"
 
 [dev-packages]

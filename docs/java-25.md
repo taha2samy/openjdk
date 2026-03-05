@@ -432,3 +432,91 @@ hide:
 
 
 {% endfor %}
+
+
+
+{% set fips = java_25.fips_tests %}
+{% if fips and fips.summary %}
+{% set summary = fips.summary %}
+{% set tests = fips.tests | default([]) %}
+
+<br>
+---
+### :material-shield-lock: FIPS 140-3 Validation Tests
+
+{% if summary.failed == 0 and summary.total > 0 %}
+<div markdown="1" style="background: rgba(0, 200, 83, 0.1); border-left: 4px solid #00c853; padding: 15px; margin-bottom: 20px;">
+:material-shield-check: **FIPS COMPLIANT**
+Module **BC-FJA** is active and enforcing Approved Mode.
+</div>
+{% else %}
+<div markdown="1" style="background: rgba(213, 0, 0, 0.1); border-left: 4px solid #d50000; padding: 15px; margin-bottom: 25px;">
+:material-shield-alert: **COMPLIANCE FAILED**
+Critical boundary violations detected during runtime analysis.
+</div>
+{% endif %}
+
+<div class="grid cards" markdown>
+- :material-format-list-checks: **Total Tests** --- <span style="font-size: 2.2em; font-weight: 800;">{{ summary.total }}</span>
+- :material-check-decagram: **Passed** --- <span style="color: #00c853; font-size: 2.2em; font-weight: 800;">{{ summary.passed }}</span>
+- :material-alert-octagon: **Failed** --- <span style="color: {{ '#d50000' if summary.failed > 0 else '#e0e0e0' }}; font-size: 2.2em; font-weight: 800;">{{ summary.failed }}</span>
+- :material-clock-fast: **Time** --- <span style="color: #2979ff; font-size: 2.2em; font-weight: 800;">{{ summary.duration | default(0) }}s</span>
+</div>
+
+<br>
+Our high-assurance validation lifecycle ensures every artifact meets uncompromising FIPS 140-3 standards. We compile our security suite using a trusted JDK before mounting it into a hardened, isolated JRE runtime. Within this boundary, Bouncy Castle FIPS is strictly injected and set to "Approved Only" mode to block legacy primitives. The engine then executes rigorous positive and negative assertions to verify cryptographic enforcement in real-time. This continuous auditing provides a zero-trust foundation for your mission-critical Java workloads.
+
+<br>
+#### :material-chart-timeline-variant: Cryptographic Testing Workflow
+```mermaid
+graph LR
+    subgraph "Compilation Stage"
+    A[Java Test Suite] -->|JDK javac| B(Validated Bytecode)
+    end
+
+    subgraph "Execution Boundary"
+    B -->|Mount| C[Target JRE Image]
+    D[BCFIPS Provider] -->|Inject| C
+    E[Strict Policy] -->|approved_only=true| C
+    end
+
+    subgraph "Analysis"
+    C -->|Run| F{Assert Security}
+    F -->|Success| G[FIPS Verified]
+    F -->|Violation| H[Security Breach]
+    end
+
+    style G fill:#00c853,color:#fff
+    style H fill:#d50000,color:#fff
+    style C stroke-width:4px
+```
+
+<br>
+#### :material-microscope: Diagnostics Log
+
+{% for test in tests %}
+<div markdown="1" style="padding: 10px 0; border-bottom: 1px solid var(--md-default-fg-color--lightest);">
+{% if test.outcome == "passed" %}:material-check-bold:{ .md-typeset__success }{% else %}:material-close-thick:{ .md-typeset__error }{% endif %} **{{ test.name }}** <span style="float:right; font-family:monospace; color:#e76f51;">{{ (test.duration | default(0) | float) | round(3) }}s</span>
+
+<div style="margin-left: 25px; font-size: 0.9em; color: var(--md-default-fg-color--light);">
+{{ test.description }}
+</div>
+</div>
+{% endfor %}
+
+{% if summary.failed > 0 %}
+<br>
+!!! failure "Forensic Error Stack"
+{% for test in tests if test.outcome == "failed" %}
+??? failure "Trace: {{ test.name }}"
+    ```bash
+    # NodeID: {{ test.nodeid }}
+    {{ test.description }}
+    ```
+{% endfor %}
+{% endif %}
+
+{% else %}
+!!! warning "Pending Validation"
+FIPS test results are not yet available for this artifact. 
+{% endif %}

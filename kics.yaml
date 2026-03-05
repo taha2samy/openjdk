@@ -2,6 +2,7 @@ exclude-paths:
   - ".git"
   - ".devcontainer"
   - "templates"
+  - "simple_test"
 
 output-path: "reports" 
 output-name: "kics-report"

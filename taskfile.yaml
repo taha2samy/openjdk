@@ -92,3 +92,4 @@ tasks:
           }' > reports/{{.VERSION}}/main-{{.VERSION}}.json
       - echo "✅ Report generated at reports/{{.VERSION}}/main-{{.VERSION}}.json"
     silent: true
+

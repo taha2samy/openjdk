@@ -1,0 +1,13 @@
+FROM ghcr.io/taha2samy/java:21-jdk_standard AS builder
+WORKDIR /app
+COPY Main.java .
+
+RUN ["/opt/java/bin/javac", "Main.java"]
+
+FROM ghcr.io/taha2samy/java:21-jre_distroless AS test
+
+WORKDIR /app
+
+COPY --from=builder /app/Main.class .
+
+CMD ["-Dorg.bouncycastle.fips.approved_only=true", "Main"]
