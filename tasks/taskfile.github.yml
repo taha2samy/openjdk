@@ -51,4 +51,4 @@ tasks:
           --jdk-img=ghcr.io/taha2samy/java@${JDK_SHA} \
           --jre-img=ghcr.io/taha2samy/java@${DISTROLESS_SHA} \
           --json-report \
-          --json-report-file=reports/{{.VERSION}}-fips/report.json
+          --json-report-file=reports/{{.VERSION}}-fips/{{.VERSION}}-fips-report.json
