@@ -144,11 +144,15 @@ jobs:
           path: reports/${{ matrix.java_version }}
       - name: just debug
         run: cat reports/${{ matrix.java_version }}/main-${{ matrix.java_version }}.json
-
-
-
-
-
+      - name: run fips boundary testing
+        run: task gh:FIPS-boundary-testing \
+          VERSION=${{ matrix.java_version }}
+      - name: Upload Scan Report Segment
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: scan-report-temp-${{ matrix.java_version }}-fips
+          path: reports/${{ matrix.java_version }}-fips
+          retention-days: 1
 
 
 

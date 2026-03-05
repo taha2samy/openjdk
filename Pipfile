@@ -13,6 +13,7 @@ mkdocs-charts-plugin = "*"
 mkdocs-macros-plugin = "*"
 pytest = "*"
 allure-pytest = "*"
+pytest-json-report = "*"
 
 [dev-packages]
 

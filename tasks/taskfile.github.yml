@@ -36,3 +36,17 @@ tasks:
     preconditions:
       - sh: command -v gh >/dev/null 2>&1
         msg: "GitHub CLI (gh) is not installed."
+
+
+  FIPS-boundary-testing:
+    desc: Run Fips boundary testing
+    cmds:
+      - |
+        JDK_SHA=$(jq -r '.digests.jdk' reports/{{.VERSION}}/main-{{.VERSION}}.json)
+        DISTROLESS_SHA=$(jq -r '.digests.distroless' reports/{{.VERSION}}/main-{{.VERSION}}.json)
+        mkdir -p reports/{{.VERSION}}-fips
+        pipenv run pytest tests \
+          --jdk-img=ghcr.io/taha2samy/java@${JDK_SHA} \
+          --jre-img=gcr.io/distroless/java@${DISTROLESS_SHA} \
+          --json-report \
+          --json-report-file=reports/{{.VERSION}}-fips/report.json
