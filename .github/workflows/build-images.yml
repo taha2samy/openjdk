@@ -142,8 +142,6 @@ jobs:
         with:
           name: build-report-java-${{ matrix.java_version }}
           path: reports/${{ matrix.java_version }}
-      - name: just debug
-        run: cat reports/${{ matrix.java_version }}/main-${{ matrix.java_version}}.json
       - name: run fips boundary testing
         run: task gh:FIPS-boundary-testing VERSION=${{ matrix.java_version }}
       - name: compress allure results
