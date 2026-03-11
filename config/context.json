@@ -10,8 +10,8 @@
     "bouncycastle_util_fips_version": "2.1.5",
     "images": {
         "alpine": "alpine@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1",
-        "static": "chainguard/static@sha256:d6a97eb401cbc7c6d48be76ad81d7899b94303580859d396b52b67bc84ea7345",
-        "wolfi_base": "chainguard/wolfi-base@sha256:08420c1a0f2995c677fa91982155c8d7da2ebd2e832a9f0070f633dae97d9099"
+        "static": "chainguard/static@sha256:2fdfacc8d61164aa9e20909dceec7cc28b9feb66580e8e1a65b9f2443c53b61b",
+        "wolfi_base": "chainguard/wolfi-base@sha256:8f4bb89aa9962e60d9e975d229624a29e81185db286f796e87ed0f7333c1b69e"
     },
     "java": {
         "11": {
@@ -119,7 +119,7 @@
         "apk-tools": "2.14.10-r10",
         "bash": "5.3-r5",
         "busybox": "1.37.0-r54",
-        "ca-certificates": "20251003-r3",
+        "ca-certificates": "20251003-r4",
         "curl": "8.18.0-r3",
         "glibc": "2.43-r2",
         "libgcc": "15.2.0-r11",
@@ -128,6 +128,6 @@
         "tzdata": "2026a-r0",
         "wolfi-baselayout": "20230201-r28",
         "wolfi-keys": "1-r13",
-        "zlib": "1.3.2-r1"
+        "zlib": "1.3.2-r2"
     }
 }
