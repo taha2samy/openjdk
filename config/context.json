@@ -11,7 +11,7 @@
     "images": {
         "alpine": "alpine@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1",
         "static": "chainguard/static@sha256:2fdfacc8d61164aa9e20909dceec7cc28b9feb66580e8e1a65b9f2443c53b61b",
-        "wolfi_base": "chainguard/wolfi-base@sha256:a9a3a0c9fb954fd70b398afdd055d74a4f196095b9fdfbcfb13495aefeefd075"
+        "wolfi_base": "chainguard/wolfi-base@sha256:2a43204178a08b8c7f5e881c550bb52733364beff904ed36eeabe33cc656c749"
     },
     "java": {
         "11": {
@@ -117,7 +117,7 @@
     },
     "wolfi_packages": {
         "apk-tools": "2.14.10-r10",
-        "bash": "5.3-r5",
+        "bash": "5.3-r6",
         "busybox": "1.37.0-r54",
         "ca-certificates": "20251003-r4",
         "curl": "8.19.0-r0",
