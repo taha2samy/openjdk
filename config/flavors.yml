@@ -8,12 +8,16 @@ image_flavors:
       use_ldconfig: true
     packages:
       - "glibc"
+      - "glibc-locale-posix"
+      - "ld-linux"
       - "zlib"
       - "ca-certificates"
+      - "ca-certificates-bundle"
       - "wolfi-baselayout"
       - "wolfi-keys"
       - "libgcc"
       - "libstdc++"
+      - "libcrypto3"
       - "tzdata"
 
   jre-standard:
@@ -25,18 +29,27 @@ image_flavors:
       use_ldconfig: true
     packages:
       - "apk-tools"
-      - "wolfi-keys"
-      - "glibc"
-      - "zlib"
+      - "bash"
+      - "busybox"
       - "ca-certificates"
+      - "ca-certificates-bundle"
+      - "glibc"
+      - "glibc-locale-posix"
+      - "ld-linux"
+      - "libcrypt1"
+      - "libcrypto3"
+      - "libgcc"
+      - "libssl3"
+      - "libstdc++"
+      - "libxcrypt"
+      - "ncurses"
+      - "ncurses-terminfo-base"
+      - "posix-libc-utils"
+      - "posix-libc-utils-bin"
+      - "tzdata"
       - "wolfi-baselayout"
       - "wolfi-keys"
-      - "libgcc"
-      - "libstdc++"
-      - "posix-libc-utils"
-      - "busybox"
-      - "tzdata"
-
+      - "zlib"
   jdk-standard:
     java_type: "jdk"
     options:
