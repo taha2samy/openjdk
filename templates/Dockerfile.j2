@@ -73,13 +73,12 @@ if [ -d "$JAVA_PATH/jre" ]; then \
     done
 
 ARG TARGETARCH
-RUN mkdir -p /tmp/sbom-jdk/sbom /tmp/sbom-jre/sbom && \
-    if [ "$TARGETARCH" = "amd64" ]; then \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
         JDK_SHA="{{ jdk_amd64_sha }}"; JRE_SHA="{{ jre_amd64_sha }}"; \
     else \
         JDK_SHA="{{ jdk_arm64_sha }}"; JRE_SHA="{{ jre_arm64_sha }}"; \
     fi; \
-    cat <<EOF > /tmp/sbom-jdk/sbom/java.cdx.json
+    cat <<EOF > /opt/jdk/java.cdx.json
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.4",
@@ -101,7 +100,7 @@ RUN mkdir -p /tmp/sbom-jdk/sbom /tmp/sbom-jre/sbom && \
 EOF
 RUN ARG TARGETARCH && \
     if [ "$TARGETARCH" = "amd64" ]; then JRE_SHA="{{ jre_amd64_sha }}"; else JRE_SHA="{{ jre_arm64_sha }}"; fi; \
-    cat <<EOF > /tmp/sbom-jre/sbom/java.cdx.json
+    cat <<EOF > /opt/jre/java.cdx.json
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.4",
