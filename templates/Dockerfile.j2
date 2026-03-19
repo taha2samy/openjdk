@@ -72,6 +72,55 @@ if [ -d "$JAVA_PATH/jre" ]; then \
     cp /tmp/java.security "$SEC_FILE"; \
     done
 
+ARG TARGETARCH
+RUN mkdir -p /tmp/sbom-jdk/sbom /tmp/sbom-jre/sbom && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+        JDK_SHA="{{ jdk_amd64_sha }}"; JRE_SHA="{{ jre_amd64_sha }}"; \
+    else \
+        JDK_SHA="{{ jdk_arm64_sha }}"; JRE_SHA="{{ jre_arm64_sha }}"; \
+    fi; \
+    cat <<EOF > /tmp/sbom-jdk/sbom/java.cdx.json
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "name": "Eclipse Temurin JDK",
+      "version": "{{ full_ver }}",
+      "purl": "pkg:generic/eclipse-temurin-jdk@{{ full_ver }}?arch=${TARGETARCH}",
+      "hashes": [ { "alg": "SHA-256", "content": "${JDK_SHA}" } ],
+      "properties": [
+        { "name": "fips-enabled", "value": "true" },
+        { "name": "bouncycastle-version", "value": "{{ bouncycastle_fips_version }}" }
+      ]
+    }
+  ]
+}
+EOF
+RUN ARG TARGETARCH && \
+    if [ "$TARGETARCH" = "amd64" ]; then JRE_SHA="{{ jre_amd64_sha }}"; else JRE_SHA="{{ jre_arm64_sha }}"; fi; \
+    cat <<EOF > /tmp/sbom-jre/sbom/java.cdx.json
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "name": "Eclipse Temurin JRE",
+      "version": "{{ full_ver }}",
+      "purl": "pkg:generic/eclipse-temurin-jre@{{ full_ver }}?arch=${TARGETARCH}",
+      "hashes": [ { "alg": "SHA-256", "content": "${JRE_SHA}" } ],
+      "properties": [
+        { "name": "fips-enabled", "value": "true" },
+        { "name": "bouncycastle-version", "value": "{{ bouncycastle_fips_version }}" }
+      ]
+    }
+  ]
+}
+EOF
 
 
 FROM scratch AS base_jdk_standard
