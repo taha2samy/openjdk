@@ -121,7 +121,7 @@
         "busybox": "1.37.0-r57",
         "ca-certificates": "20260413-r0",
         "ca-certificates-bundle": "20260413-r0",
-        "curl": "8.20.0-r0",
+        "curl": "8.20.0-r1",
         "glibc": "2.43-r7",
         "glibc-locale-posix": "2.43-r7",
         "ld-linux": "2.43-r7",
