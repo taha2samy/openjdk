@@ -11,7 +11,7 @@
     "images": {
         "alpine": "alpine@sha256:6baf43584bcb78f2e5847d1de515f23499913ac9f12bdf834811a3145eb11ca1",
         "static": "chainguard/static@sha256:77d8b8925dc27970ec2f48243f44c7a260d52c49cd778288e4ee97566e0cb75b",
-        "wolfi_base": "chainguard/wolfi-base@sha256:31da6565f35af6401031c1d7aa91dc84ac76c5c48edd17fb90f0ed9e3173c7a9"
+        "wolfi_base": "chainguard/wolfi-base@sha256:4ac37aff83b3f67e96674ddf86d878f8c2a8f16ef1420b02611600bbe94ea8c9"
     },
     "java": {
         "11": {
@@ -126,13 +126,13 @@
         "glibc-locale-posix": "2.43-r7",
         "ld-linux": "2.43-r7",
         "libcrypt1": "2.43-r7",
-        "libcrypto3": "3.6.2-r3",
+        "libcrypto3": "3.6.2-r5",
         "libgcc": "15.2.0-r11",
-        "libssl3": "3.6.2-r3",
+        "libssl3": "3.6.2-r5",
         "libstdc++": "15.2.0-r11",
         "libxcrypt": "4.5.2-r2",
-        "ncurses": "6.6.20260502-r0",
-        "ncurses-terminfo-base": "6.6.20260502-r0",
+        "ncurses": "6.6.20260509-r0",
+        "ncurses-terminfo-base": "6.6.20260509-r0",
         "posix-libc-utils": "2.43-r7",
         "posix-libc-utils-bin": "2.43-r7",
         "tzdata": "2026b-r0",
